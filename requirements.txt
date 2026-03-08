@@ -1,0 +1,7 @@
+flask
+requests
+firebase-admin
+google-genai
+python-dotenv
+Pillow
+gunicorn

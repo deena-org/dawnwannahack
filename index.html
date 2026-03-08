@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0d1117"/>
+<title>BizBuddy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0d1117;
+  --surface:#161b27;
+  --surface2:#1e2537;
+  --border:rgba(255,255,255,0.06);
+  --text:#e8edf8;
+  --muted:#5a6785;
+  --accent:#00d4aa;
+  --accent2:#6c63ff;
+  --warn:#ff6b6b;
+  --gold:#ffd166;
+  --green:#06d6a0;
+}
+body.light-mode{
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --surface2:#e8edf5;
+  --border:rgba(0,0,0,0.08);
+  --text:#1a2234;
+  --muted:#7a8aaa;
+  --accent:#00b894;
+  --accent2:#5a52d5;
+  --warn:#e55353;
+  --gold:#e6a817;
+  --green:#00a67e;
+}
+body.light-mode .topnav{background:rgba(240,244,248,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+body.light-mode .score-hero{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
+body.light-mode #loading{background:var(--bg);}
+.theme-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--muted);font-size:16px;cursor:pointer;transition:all 0.2s;line-height:1;}
+.theme-btn:hover{color:var(--accent);border-color:var(--accent);}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background-color 0.3s ease,color 0.3s ease;}
+.stat-card,.desk-stat,.desk-card,.chart-card,.roadmap-card,.cert-card,.sale-item,.modal-box,.topnav{transition:background-color 0.3s ease,color 0.3s ease,border-color 0.3s ease;}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px;}
+.loader-ring{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* LOGIN */
+#login-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:32px;padding:24px;}
+.login-logo{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px;}
+.login-card h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;}
+.login-card p{color:var(--muted);font-size:14px;line-height:1.6;}
+.input-group{display:flex;flex-direction:column;gap:8px;}
+.input-group label{font-size:13px;color:var(--muted);font-weight:500;}
+.input-group input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.input-group input:focus{border-color:var(--accent);}
+.input-group input::placeholder{color:var(--muted);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:14px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:opacity 0.2s;width:100%;}
+.btn-primary:hover{opacity:0.9;}
+.view-tabs{display:flex;gap:8px;}
+.tab-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;}
+.tab-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+
+/* APP SHELL */
+#app{display:none;min-height:100vh;}
+
+/* TOP NAV */
+.topnav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.view-toggle{display:flex;background:var(--surface);border-radius:8px;padding:3px;border:1px solid var(--border);}
+.vtbtn{padding:5px 12px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.vtbtn.active{background:var(--accent);color:#000;font-weight:600;}
+.user-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--muted);}
+
+/* MOBILE VIEW */
+#mobile-view{padding:20px;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:20px;}
+
+/* SCORE CARD */
+.score-hero{background:linear-gradient(135deg,#0d2d2a,#1a1535);border:1px solid rgba(0,212,170,0.2);border-radius:24px;padding:32px;text-align:center;position:relative;overflow:hidden;}
+.score-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(0,212,170,0.15),transparent 70%);pointer-events:none;}
+.score-label{font-size:12px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.score-circle{width:140px;height:140px;margin:0 auto 16px;position:relative;}
+.score-circle svg{transform:rotate(-90deg);}
+.score-circle .track{fill:none;stroke:var(--surface2);stroke-width:8;}
+.score-circle .fill{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1),stroke 0.5s ease;}
+@keyframes pulse-glow{0%,100%{filter:drop-shadow(0 0 4px currentColor);}50%{filter:drop-shadow(0 0 10px currentColor);}}
+.score-circle svg .fill{animation:pulse-glow 2.5s ease-in-out infinite;}
+.score-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--text);}
+.score-max{font-size:14px;color:var(--muted);font-weight:400;}
+.score-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--accent);font-weight:600;margin-bottom:8px;}
+.score-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+.score-biz{font-size:13px;color:var(--muted);}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;}
+.stat-icon{font-size:20px;margin-bottom:8px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text);}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* SECTION HEADERS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.section-badge{background:var(--surface2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--muted);}
+
+/* CHART CARD */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;}
+.chart-wrap{height:160px;position:relative;}
+
+/* ROADMAP */
+.roadmap-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;}
+.roadmap-progress{background:var(--surface2);border-radius:100px;height:6px;margin-bottom:20px;overflow:hidden;}
+.roadmap-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
+.roadmap-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.roadmap-item:last-child{border-bottom:none;}
+.roadmap-check{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.check-done{background:rgba(0,212,170,0.15);color:var(--accent);}
+.check-pending{background:var(--surface2);color:var(--muted);}
+.roadmap-text{flex:1;}
+.roadmap-text strong{font-size:13px;font-weight:500;display:block;}
+.roadmap-text span{font-size:11px;color:var(--muted);}
+
+/* RECENT SALES */
+.sales-list{display:flex;flex-direction:column;gap:8px;}
+.sale-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.sale-left{display:flex;flex-direction:column;gap:2px;}
+.sale-item-name{font-size:13px;font-weight:500;}
+.sale-date{font-size:11px;color:var(--muted);}
+.sale-amount{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--accent);}
+
+/* CERTIFICATE */
+.cert-card{background:linear-gradient(135deg,#0d2d2a,#1a1535);border:2px solid transparent;border-radius:20px;padding:24px;text-align:center;position:relative;overflow:hidden;background-clip:padding-box;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.35s ease;}
+.cert-card::before{content:'';position:absolute;inset:-2px;border-radius:22px;padding:2px;background:linear-gradient(135deg,var(--accent),var(--accent2),var(--gold),var(--accent));background-size:300% 300%;animation:cert-border-flow 4s ease infinite;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;z-index:0;pointer-events:none;}
+@keyframes cert-border-flow{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+.cert-card::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:0.5;pointer-events:none;z-index:0;border-radius:20px;}
+.cert-card:hover{transform:perspective(600px) rotateY(-2deg) rotateX(1.5deg) scale(1.02);box-shadow:0 12px 40px rgba(0,212,170,0.15),0 0 60px rgba(108,99,255,0.08);}
+.cert-card>*{position:relative;z-index:1;}
+.cert-card .cert-shine{position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(255,255,255,0.03),transparent 30%);animation:cert-shine-rotate 8s linear infinite;z-index:0;pointer-events:none;}
+@keyframes cert-shine-rotate{to{transform:rotate(360deg);}}
+.cert-download-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:10px 20px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-top:14px;transition:opacity 0.2s,transform 0.2s;}
+.cert-download-btn:hover{opacity:0.9;transform:translateY(-1px);}
+body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
+.cert-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:16px;}
+.cert-score-big{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1;}
+.cert-stars{font-size:20px;margin:8px 0;}
+.cert-status{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.cert-id{font-size:11px;color:var(--muted);font-family:monospace;background:var(--surface2);padding:6px 12px;border-radius:6px;display:inline-block;}
+
+/* DESKTOP VIEW */
+#desktop-view{display:none;padding:24px;max-width:1400px;margin:0 auto;}
+.desk-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
+.desk-stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;border-left-width:3px;position:relative;overflow:hidden;transition:transform 0.2s;}
+.desk-stat:hover{transform:translateY(-2px);}
+.desk-stat-icon{font-size:22px;margin-bottom:10px;}
+.desk-stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;}
+.desk-stat-label{font-size:12px;color:var(--muted);}
+.desk-stat-trend{font-size:11px;color:var(--green);margin-top:6px;}
+
+.desk-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+.desk-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;}
+.desk-card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+
+/* TABLE */
+.msme-table{width:100%;border-collapse:collapse;}
+.msme-table th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:0 12px 12px;border-bottom:1px solid var(--border);}
+.msme-table td{padding:14px 12px;border-bottom:1px solid var(--border);font-size:13px;}
+.msme-table tr:last-child td{border-bottom:none;}
+.msme-table tr:hover td{background:var(--surface2);}
+.score-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.score-high{background:rgba(6,214,160,0.1);color:#06d6a0;}
+.score-mid{background:rgba(255,209,102,0.1);color:var(--gold);}
+.score-low{background:rgba(255,107,107,0.1);color:var(--warn);}
+.status-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;display:inline-block;}
+
+/* AVATAR */
+.avatar{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;color:#fff;}
+
+/* SEARCH BAR */
+.table-search{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+.table-search input{flex:1;min-width:160px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.table-search input:focus{border-color:var(--accent);}
+.table-search select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;transition:background 0.25s ease,backdrop-filter 0.25s ease;}
+.modal-overlay.open{display:flex;animation:modal-overlay-in 0.25s ease forwards;}
+@keyframes modal-overlay-in{from{background:rgba(0,0,0,0);backdrop-filter:blur(0px);}to{background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);}}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;position:relative;opacity:0;transform:scale(0.92) translateY(12px);animation:modal-box-in 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s forwards;}
+@keyframes modal-box-in{to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:13px;}
+.modal-close:hover{color:var(--warn);border-color:var(--warn);}
+.modal-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.modal-stat{background:var(--surface2);border-radius:12px;padding:14px;}
+.modal-stat-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.modal-stat-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.modal-sale-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px;}
+
+/* SHARE BTN */
+.share-btn{background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:12px;padding:12px 20px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;justify-content:center;margin-top:12px;}
+.share-btn:hover{opacity:0.9;}
+.status-ready{background:rgba(6,214,160,0.1);color:#06d6a0;}
+.status-progress{background:rgba(255,209,102,0.1);color:var(--gold);}
+.status-building{background:rgba(90,103,133,0.2);color:var(--muted);}
+
+/* SCORE DIST */
+.dist-bars{display:flex;flex-direction:column;gap:10px;}
+.dist-row{display:flex;align-items:center;gap:12px;}
+.dist-label{font-size:12px;color:var(--muted);width:80px;flex-shrink:0;}
+.dist-bar-bg{flex:1;background:var(--surface2);border-radius:100px;height:8px;overflow:hidden;}
+.dist-bar-fill{height:100%;border-radius:100px;transition:width 1s ease;}
+.dist-count{font-size:12px;color:var(--muted);width:24px;text-align:right;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px;color:var(--muted);}
+.empty-state div{font-size:32px;margin-bottom:12px;}
+.empty-state p{font-size:13px;}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp 0.5s ease forwards;}
+.fade-up-1{animation-delay:0.1s;opacity:0;}
+.fade-up-2{animation-delay:0.2s;opacity:0;}
+.fade-up-3{animation-delay:0.3s;opacity:0;}
+.fade-up-4{animation-delay:0.4s;opacity:0;}
+.fade-up-5{animation-delay:0.5s;opacity:0;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  #desktop-view .desk-grid{grid-template-columns:1fr 1fr;}
+  #desktop-view .desk-row{grid-template-columns:1fr;}
+  .desk-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){
+  #desktop-view .desk-grid{grid-template-columns:1fr 1fr;}
+}
+
+.refresh-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.refresh-btn:hover{color:var(--accent);border-color:var(--accent);}
+
+.logout-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.logout-btn:hover{color:var(--warn);border-color:var(--warn);}
+/* MALAYSIA MAP */
+.map-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:24px;}
+.map-card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.map-tooltip{position:absolute;background:rgba(13,17,23,0.95);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:999;display:none;min-width:160px;}
+.map-tooltip strong{font-family:'Syne',sans-serif;font-size:13px;display:block;margin-bottom:4px;}
+.map-legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.map-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.map-legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* TABLE ROW HOVER ARROW */
+.msme-table tr[data-name]{position:relative;}
+.msme-table tr[data-name] td:last-child{position:relative;padding-right:32px;}
+.msme-table tr[data-name] td:last-child::after{content:'→';position:absolute;right:12px;top:50%;transform:translateY(-50%);opacity:0;color:var(--accent);font-size:14px;font-weight:700;transition:opacity 0.2s,transform 0.2s;}
+.msme-table tr[data-name]:hover td:last-child::after{opacity:1;transform:translateY(-50%) translateX(2px);}
+
+/* LOADING SPINNER FOR BUTTONS */
+.btn-loading{pointer-events:none;opacity:0.7;position:relative;}
+.btn-loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-left:8px;vertical-align:middle;}
+.refresh-btn.btn-loading::after{border:2px solid var(--border);border-top-color:var(--accent);width:12px;height:12px;}
+
+/* PULL TO REFRESH */
+.pull-indicator{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-60px);z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:transform 0.3s ease,opacity 0.3s ease;opacity:0;pointer-events:none;}
+.pull-indicator.visible{opacity:1;transform:translateX(-50%) translateY(8px);}
+.pull-indicator.refreshing .pull-arrow{animation:spin 0.6s linear infinite;}
+.pull-arrow{font-size:16px;transition:transform 0.2s;}
+
+/* NAV DRAWER */
+.nav-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:400;display:none;transition:background 0.3s ease;}
+.nav-drawer-overlay.open{display:block;background:rgba(0,0,0,0.5);}
+.nav-drawer{position:fixed;top:0;right:-280px;width:280px;height:100%;background:var(--surface);border-left:1px solid var(--border);z-index:401;padding:24px;display:flex;flex-direction:column;gap:8px;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);padding-top:calc(24px + env(safe-area-inset-top,0px));}
+.nav-drawer-overlay.open .nav-drawer{right:0;}
+.nav-drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.nav-drawer-header h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.nav-drawer-close{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;}
+.nav-drawer-close:hover{color:var(--warn);border-color:var(--warn);}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:none;background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:background 0.15s,color 0.15s;width:100%;text-align:left;}
+.drawer-item:hover{background:var(--surface2);}
+.drawer-item-icon{font-size:18px;width:24px;text-align:center;}
+.drawer-item.danger{color:var(--warn);}
+.drawer-item.danger:hover{background:rgba(255,107,107,0.1);}
+.drawer-divider{height:1px;background:var(--border);margin:8px 0;}
+
+/* EMPTY STATE UPGRADE */
+.empty-hero{text-align:center;padding:48px 24px;background:linear-gradient(135deg,rgba(0,212,170,0.04),rgba(108,99,255,0.04));border:1px dashed var(--border);border-radius:20px;}
+.empty-hero-icon{font-size:48px;margin-bottom:16px;animation:float-bob 3s ease-in-out infinite;}
+@keyframes float-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.empty-hero h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;}
+.empty-hero p{color:var(--muted);font-size:13px;line-height:1.6;max-width:280px;margin:0 auto 20px;}
+.empty-hero-cta{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:12px;padding:12px 24px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;transition:opacity 0.2s,transform 0.2s;}
+.empty-hero-cta:hover{opacity:0.9;transform:translateY(-1px);}
+
+/* CHART PERIOD TABS */
+.chart-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;}
+.chart-tab{padding:5px 12px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;}
+.chart-tab.active{background:var(--accent);color:#000;font-weight:600;}
+
+/* SAFE AREAS */
+.topnav{padding-top:env(safe-area-inset-top,0px);height:calc(60px + env(safe-area-inset-top,0px));}
+#mobile-view{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));}
+
+/* NAV HAMBURGER */
+.nav-menu-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;transition:all 0.2s;}
+.nav-menu-btn:hover{color:var(--accent);border-color:var(--accent);}
+
+/* SCORE BREAKDOWN CARD */
+.breakdown-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;}
+.breakdown-card .section-title{margin-bottom:16px;}
+.breakdown-row{display:flex;align-items:center;gap:12px;padding:8px 0;}
+.breakdown-row+.breakdown-row{border-top:1px solid var(--border);}
+.breakdown-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.breakdown-info{flex:1;min-width:0;}
+.breakdown-label{font-size:12px;font-weight:500;color:var(--text);}
+.breakdown-sublabel{font-size:10px;color:var(--muted);margin-top:1px;}
+.breakdown-bar-bg{height:6px;background:var(--surface2);border-radius:100px;overflow:hidden;margin-top:4px;}
+.breakdown-bar-fill{height:100%;border-radius:100px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
+.breakdown-value{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;flex-shrink:0;min-width:36px;text-align:right;}
+.breakdown-weight{font-size:9px;color:var(--muted);text-align:right;}
+
+/* LOAN CTA CARD */
+.loan-cta-card{background:linear-gradient(135deg,rgba(6,214,160,0.1),rgba(108,99,255,0.08));border:1px solid rgba(6,214,160,0.3);border-radius:20px;padding:24px;text-align:center;display:none;}
+.loan-cta-card.visible{display:block;}
+.loan-cta-icon{font-size:36px;margin-bottom:12px;}
+.loan-cta-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);margin-bottom:6px;}
+.loan-cta-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
+.loan-cta-btn{background:linear-gradient(135deg,var(--green),var(--accent2));border:none;border-radius:12px;padding:14px 28px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:opacity 0.2s,transform 0.2s;}
+.loan-cta-btn:hover{opacity:0.9;transform:translateY(-1px);}
+
+/* PRE-QUAL MODAL */
+.prequal-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;}
+.prequal-item{background:var(--surface2);border-radius:12px;padding:14px;text-align:center;}
+.prequal-item-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.prequal-item-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.prequal-divider{height:1px;background:var(--border);margin:16px 0;}
+.prequal-note{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;margin-top:12px;}
+.prequal-wa-btn{background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:12px;padding:14px 24px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:16px;transition:opacity 0.2s;}
+.prequal-wa-btn:hover{opacity:0.9;}
+
+/* GROWTH TREND BADGES */
+.stat-trend{font-size:10px;margin-top:4px;font-weight:600;}
+.trend-up{color:var(--green);}
+.trend-down{color:var(--warn);}
+.trend-neutral{color:var(--muted);}
+
+/* LANGUAGE TOGGLE */
+.lang-toggle{display:flex;background:var(--surface2);border-radius:8px;padding:2px;border:1px solid var(--border);overflow:hidden;}
+.lang-btn{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;}
+.lang-btn.active{background:var(--accent);color:#000;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#00d4aa,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">BizBuddy</div>
+  <div class="loader-ring"></div>
+  <div style="font-size:13px;color:#5a6785;">Loading dashboard...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:24px;">
+  <div class="login-logo">BizBuddy</div>
+  <div style="text-align:center;color:#5a6785;font-size:14px;">Financial Identity for Every Entrepreneur</div>
+  <div class="login-card">
+    <h2>Access Dashboard</h2>
+    <p>Enter your WhatsApp number to view your financial profile, or use bank view to see portfolio analytics.</p>
+    <div class="view-tabs">
+      <button class="tab-btn active" onclick="selectLoginView('msme')" id="tab-msme">👤 My Dashboard</button>
+      <button class="tab-btn" onclick="selectLoginView('bank')" id="tab-bank">🏦 Bank View</button>
+    </div>
+    <div id="msme-login-section">
+      <div class="input-group">
+        <label>WhatsApp Number (with country code)</label>
+        <input type="tel" id="phone-input" placeholder="e.g. 60123456789" />
+      </div>
+    </div>
+    <div id="bank-login-section" style="display:none;">
+      <div class="input-group">
+        <label>Access Code</label>
+        <input type="password" id="bank-code-input" placeholder="Enter bank access code" />
+      </div>
+      <div style="font-size:11px;color:#5a6785;margin-top:4px;">Demo code: <strong style="color:#00d4aa;">bank2026</strong></div>
+    </div>
+    <button class="btn-primary" onclick="handleLogin()">Access Dashboard →</button>
+    <div id="login-error" style="color:#ff6b6b;font-size:13px;text-align:center;display:none;"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <!-- PULL TO REFRESH INDICATOR -->
+  <div class="pull-indicator" id="pull-indicator">
+    <span class="pull-arrow">↓</span>
+  </div>
+
+  <nav class="topnav">
+    <div class="nav-logo">BizBuddy</div>
+    <div class="nav-right">
+      <div class="view-toggle" id="view-toggle" style="display:none;">
+        <button class="vtbtn active" onclick="switchView('mobile')" id="vt-mobile">📊 My Dashboard</button>
+        <button class="vtbtn" onclick="switchView('desktop')" id="vt-desktop">🏦 Portfolio</button>
+      </div>
+      <div class="user-badge" id="user-badge">Loading...</div>
+      <span id="last-updated" style="font-size:11px;color:var(--muted);"></span>
+      <button class="nav-menu-btn" onclick="openDrawer()" id="nav-menu-btn" title="Menu">☰</button>
+    </div>
+  </nav>
+
+  <!-- NAV DRAWER -->
+  <div class="nav-drawer-overlay" id="nav-drawer-overlay" onclick="closeDrawer()">
+    <div class="nav-drawer" onclick="event.stopPropagation()">
+      <div class="nav-drawer-header">
+        <h3>Settings</h3>
+        <button class="nav-drawer-close" onclick="closeDrawer()">✕</button>
+      </div>
+      <div id="drawer-user-info" style="padding:12px 14px;background:var(--surface2);border-radius:12px;margin-bottom:8px;">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" id="drawer-user-name">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="drawer-user-biz">—</div>
+      </div>
+      <button class="drawer-item" onclick="refreshData();closeDrawer();">
+        <span class="drawer-item-icon">↻</span> Refresh Data
+      </button>
+      <button class="drawer-item" onclick="toggleTheme();closeDrawer();">
+        <span class="drawer-item-icon" id="drawer-theme-icon">☀️</span> <span id="drawer-theme-label">Switch to Light</span>
+      </button>
+      <button class="drawer-item" onclick="toggleLang();closeDrawer();" id="drawer-lang-btn">
+        <span class="drawer-item-icon">🌐</span> <span id="drawer-lang-label">Bahasa Melayu</span>
+      </button>
+      <div class="drawer-divider"></div>
+      <button class="drawer-item danger" onclick="logout();closeDrawer();">
+        <span class="drawer-item-icon">⏻</span> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- MOBILE / MSME VIEW -->
+  <div id="mobile-view">
+    <div class="score-hero fade-up fade-up-1">
+      <div class="score-label" data-i18n="credit_readiness">Credit Readiness Score</div>
+      <div class="score-circle">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle class="track" cx="70" cy="70" r="58"/>
+          <circle class="fill" id="score-arc" cx="70" cy="70" r="58" stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+        </svg>
+        <div class="score-number" id="score-num">—</div>
+      </div>
+      <div class="score-badge" id="score-badge">⏳ Loading...</div>
+      <div class="score-name" id="user-name">—</div>
+      <div class="score-biz" id="user-biz">—</div>
+      <button class="share-btn" id="share-wa-btn" onclick="shareViaWhatsApp()" style="margin-top:16px;max-width:280px;margin-left:auto;margin-right:auto;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L0 24l6.335-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 01-5.031-1.388l-.361-.214-3.741.981.999-3.648-.235-.374A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+        Share Credit Score via WhatsApp
+      </button>
+    </div>
+
+    <div class="stats-row fade-up fade-up-2">
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value" id="stat-revenue">RM—</div>
+        <div class="stat-label" data-i18n="total_revenue">Total Revenue</div>
+        <div class="stat-trend" id="trend-revenue"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="stat-txn">—</div>
+        <div class="stat-label" data-i18n="transactions">Transactions</div>
+        <div class="stat-trend" id="trend-txn"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-value" id="stat-avg">RM—</div>
+        <div class="stat-label" data-i18n="avg_per_sale">Avg per Sale</div>
+        <div class="stat-trend" id="trend-avg"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value" id="stat-best">RM—</div>
+        <div class="stat-label" data-i18n="best_sale">Best Sale</div>
+        <div class="stat-trend" id="trend-best"></div>
+      </div>
+    </div>
+
+    <!-- LOAN CTA (visible when score >= 70) -->
+    <div class="loan-cta-card fade-up fade-up-2" id="loan-cta-card">
+      <div class="loan-cta-icon">🎉</div>
+      <div class="loan-cta-title" data-i18n="prequal_title">You're Pre-Qualified!</div>
+      <div class="loan-cta-desc" id="loan-cta-desc" data-i18n="prequal_desc">Your BizBuddy credit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.</div>
+      <button class="loan-cta-btn" onclick="openPrequalModal()" data-i18n="request_assessment">📋 Request Loan Assessment</button>
+    </div>
+
+    <!-- SCORE BREAKDOWN -->
+    <div class="breakdown-card fade-up fade-up-3" id="score-breakdown-card">
+      <div class="section-header">
+        <div class="section-title" data-i18n="score_breakdown">Score Breakdown</div>
+        <div class="section-badge" data-i18n="ai_scored">AI Scored</div>
+      </div>
+      <div id="breakdown-rows"></div>
+    </div>
+
+    <div class="chart-card fade-up fade-up-3">
+      <div class="section-header">
+        <div class="section-title" data-i18n="sales_activity">Sales Activity</div>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="switchChartPeriod('7d',this)" id="ct-7d">7 Days</button>
+          <button class="chart-tab" onclick="switchChartPeriod('30d',this)" id="ct-30d">30 Days</button>
+          <button class="chart-tab" onclick="switchChartPeriod('all',this)" id="ct-all">All Time</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="sales-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="roadmap-card fade-up fade-up-4">
+      <div class="section-header">
+        <div class="section-title" data-i18n="loan_roadmap">Loan Readiness Roadmap</div>
+        <div class="section-badge" id="roadmap-pct">0%</div>
+      </div>
+      <div class="roadmap-progress">
+        <div class="roadmap-fill" id="roadmap-bar" style="width:0%"></div>
+      </div>
+      <div id="roadmap-items"></div>
+    </div>
+
+    <div class="fade-up fade-up-5">
+      <div class="section-header">
+        <div class="section-title" data-i18n="recent_sales">Recent Sales</div>
+        <div class="section-badge" id="recent-count">0 records</div>
+      </div>
+      <div class="sales-list" id="sales-list"></div>
+    </div>
+
+    <div class="cert-card fade-up fade-up-5" id="cert-card-el">
+      <div class="cert-shine"></div>
+      <div class="cert-title" data-i18n="credit_cert">⭐ Credit Certificate</div>
+      <div class="cert-score-big" id="cert-score">—</div>
+      <div class="cert-stars" id="cert-stars">—</div>
+      <div class="cert-status" id="cert-status">Generate credit score via WhatsApp to see certificate</div>
+      <div class="cert-id" id="cert-id">NC-XXXX-XXXXXXXX</div>
+      <button class="cert-download-btn" onclick="downloadCertificate()" data-i18n="save_cert">📥 Save Certificate as Image</button>
+    </div>
+  </div>
+
+  <!-- DESKTOP / BANK VIEW -->
+  <div id="desktop-view" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);">BizBuddy Bank Dashboard</div>
+      <button onclick="exportPDF()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:9px 18px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+        📄 Export Report
+      </button>
+    </div>
+    <div class="desk-grid fade-up fade-up-1">
+      <div class="desk-stat" style="border-left-color:#6c63ff;">
+        <div class="desk-stat-icon">🏪</div>
+        <div class="desk-stat-val" id="d-total-msme">—</div>
+        <div class="desk-stat-label">Total MSMEs</div>
+        <div class="desk-stat-trend">↑ Growing portfolio</div>
+      </div>
+      <div class="desk-stat" style="border-left-color:#06d6a0;">
+        <div class="desk-stat-icon">✅</div>
+        <div class="desk-stat-val" style="color:#06d6a0" id="d-loan-ready">—</div>
+        <div class="desk-stat-label">Loan Ready (70+)</div>
+        <div class="desk-stat-trend" id="d-loan-pct">— of portfolio</div>
+      </div>
+      <div class="desk-stat" style="border-left-color:#ffd166;">
+        <div class="desk-stat-icon">⭐</div>
+        <div class="desk-stat-val" style="color:#ffd166" id="d-avg-score">—</div>
+        <div class="desk-stat-label">Avg Credit Score</div>
+        <div class="desk-stat-trend">Portfolio average</div>
+      </div>
+      <div class="desk-stat" style="border-left-color:#00d4aa;">
+        <div class="desk-stat-icon">💰</div>
+        <div class="desk-stat-val" id="d-total-rev">RM—</div>
+        <div class="desk-stat-label">Total Tracked Revenue</div>
+        <div class="desk-stat-trend">Verified transactions</div>
+      </div>
+    </div>
+
+    <div class="desk-row fade-up fade-up-2">
+      <div class="desk-card">
+        <h3>🏪 MSME Portfolio</h3>
+        <div class="table-search">
+          <input type="text" id="msme-search" placeholder="🔍 Search by name or business..." oninput="filterTable()"/>
+          <select id="msme-filter" onchange="filterTable()">
+            <option value="all">All Status</option>
+            <option value="ready">✅ Loan Ready</option>
+            <option value="progress">🔄 In Progress</option>
+            <option value="building">📈 Building</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="msme-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Business</th>
+                <th>Product</th>
+                <th>Revenue</th>
+                <th>Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="msme-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="desk-card">
+        <h3>📊 Score Distribution</h3>
+        <div class="dist-bars" id="dist-bars"></div>
+        <div style="margin-top:24px;">
+          <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">🥧 Portfolio Breakdown</h3>
+          <div style="height:180px;position:relative;">
+            <canvas id="portfolio-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="desk-row fade-up fade-up-3">
+      <div class="desk-card">
+        <h3>📈 Revenue Trends</h3>
+        <div style="height:200px;position:relative;">
+          <canvas id="revenue-chart"></canvas>
+        </div>
+      </div>
+      <div class="desk-card">
+        <h3>🎯 Loan Pipeline</h3>
+        <div id="loan-pipeline"></div>
+      </div>
+    </div>
+    <!-- MALAYSIA MAP -->
+    <div class="map-card fade-up fade-up-4">
+      <h3>🗺️ MSME Distribution Map — Malaysia</h3>
+      <div style="position:relative;">
+        <canvas id="malaysia-map" height="320" style="width:100%;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;"></canvas>
+        <div class="map-tooltip" id="map-tooltip"></div>
+      </div>
+      <div class="map-legend">
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#06d6a0"></div>Loan Ready (70+)</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ffd166"></div>In Progress (50-69)</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff6b6b"></div>Building (&lt;50)</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#5a6785"></div>Unscored</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MSME DETAIL MODAL -->
+<div class="modal-overlay" id="msme-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    <div class="modal-header">
+      <div class="avatar" id="modal-avatar" style="width:52px;height:52px;font-size:18px;border-radius:14px;"></div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;" id="modal-name">—</div>
+        <div style="font-size:13px;color:var(--muted);" id="modal-biz">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="modal-product">—</div>
+      </div>
+    </div>
+    <div class="modal-stats">
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-score" style="color:var(--accent);">—</div>
+        <div class="modal-stat-label">Credit Score</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-rev">—</div>
+        <div class="modal-stat-label">Total Revenue</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-txn">—</div>
+        <div class="modal-stat-label">Transactions</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-status">—</div>
+        <div class="modal-stat-label">Loan Status</div>
+      </div>
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">Recent Sales</div>
+    <div id="modal-sales"></div>
+    <div id="modal-phone-row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);"></div>
+  </div>
+</div>
+
+<!-- PRE-QUALIFICATION MODAL -->
+<div class="modal-overlay" id="prequal-modal">
+  <div class="modal-box" style="max-width:440px;">
+    <button class="modal-close" onclick="closePrequalModal()">✕ Close</button>
+    <div style="text-align:center;margin-bottom:8px;">
+      <div style="font-size:40px;margin-bottom:8px;">🏦</div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--green);" data-i18n="prequal_modal_title">Loan Pre-Qualification</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;" data-i18n="prequal_modal_sub">Review your details before submitting to the bank</div>
+    </div>
+    <div class="prequal-summary">
+      <div class="prequal-item">
+        <div class="prequal-item-val" id="pq-score" style="color:var(--green);">—</div>
+        <div class="prequal-item-label" data-i18n="credit_score_label">Credit Score</div>
+      </div>
+      <div class="prequal-item">
+        <div class="prequal-item-val" id="pq-revenue">—</div>
+        <div class="prequal-item-label" data-i18n="total_revenue">Total Revenue</div>
+      </div>
+      <div class="prequal-item">
+        <div class="prequal-item-val" id="pq-txn">—</div>
+        <div class="prequal-item-label" data-i18n="transactions">Transactions</div>
+      </div>
+      <div class="prequal-item">
+        <div class="prequal-item-val" id="pq-verified">—</div>
+        <div class="prequal-item-label" data-i18n="verified_sales">Verified Sales</div>
+      </div>
+    </div>
+    <div class="prequal-divider"></div>
+    <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:4px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;" data-i18n="sharing_with_bank">You'll be sharing:</div>
+      <div style="font-size:12px;line-height:1.8;">
+        ✅ <span data-i18n="pq_item1">Business name & owner name</span><br>
+        ✅ <span data-i18n="pq_item2">Credit score & breakdown</span><br>
+        ✅ <span data-i18n="pq_item3">Revenue history & verification rate</span><br>
+        ✅ <span data-i18n="pq_item4">BizBuddy certificate ID</span>
+      </div>
+    </div>
+    <button class="prequal-wa-btn" id="pq-wa-btn" onclick="submitPrequal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L0 24l6.335-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 01-5.031-1.388l-.361-.214-3.741.981.999-3.648-.235-.374A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+      <span data-i18n="send_to_bank">Send to Partner Bank via WhatsApp</span>
+    </button>
+    <div class="prequal-note" data-i18n="pq_note">Your data is protected under PDPA Malaysia. The bank will contact you within 2-3 business days.</div>
+  </div>
+</div>
+
+<script type="module">
+import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBCKEixrTah-fLAkflpb3aJJ6faU93gAiQ",
+  authDomain: "donahack.firebaseapp.com",
+  projectId: "donahack",
+  storageBucket: "donahack.firebasestorage.app",
+  messagingSenderId: "1004439535740",
+  appId: "1:1004439535740:web:8a23ce54f2a1eec29549f9"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+let currentView = 'mobile';
+let currentUser = null;
+let allUsers = [];
+let salesChartInstance = null;
+let portfolioChartInstance = null;
+let revenueChartInstance = null;
+
+// ── INIT ──
+window.addEventListener('load', async () => {
+  await new Promise(r => setTimeout(r, 800));
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
+// ── LOGIN ──
+window.selectLoginView = (v) => {
+  document.getElementById('tab-msme').classList.toggle('active', v==='msme');
+  document.getElementById('tab-bank').classList.toggle('active', v==='bank');
+  document.getElementById('msme-login-section').style.display = v==='msme'?'block':'none';
+  document.getElementById('bank-login-section').style.display = v==='bank'?'block':'none';
+};
+
+window.handleLogin = async () => {
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  const loginBtn = document.querySelector('.login-card .btn-primary');
+  const isMsme = document.getElementById('tab-msme').classList.contains('active');
+
+  // Loading state
+  loginBtn.classList.add('btn-loading');
+  loginBtn.textContent = 'Connecting...';
+
+  if (isMsme) {
+    const phone = document.getElementById('phone-input').value.trim().replace(/\s/g,'');
+    if (!phone) { showError('Please enter your WhatsApp number'); loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →'; return; }
+    try {
+      const userDoc = await getDoc(doc(db, 'users', phone));
+      if (!userDoc.exists()) { showError('No account found. Please register via WhatsApp first.'); loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →'; return; }
+      currentUser = { ...userDoc.data(), phone };
+      loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →';
+      showApp('mobile');
+      loadMobileView(currentUser);
+    } catch(e) { showError('Connection error. Please try again.'); loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →'; }
+  } else {
+    const code = document.getElementById('bank-code-input').value.trim();
+    if (code !== 'bank2026') { showError('Invalid access code'); loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →'; return; }
+    loginBtn.classList.remove('btn-loading'); loginBtn.textContent='Access Dashboard →';
+    showApp('bank');
+    loadBankView();
+  }
+};
+
+function showError(msg) {
+  const err = document.getElementById('login-error');
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+
+function showApp(view) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  if (view === 'bank') {
+    document.getElementById('view-toggle').style.display = 'none';
+    // Set drawer info for bank
+    const dn = document.getElementById('drawer-user-name');
+    const db2 = document.getElementById('drawer-user-biz');
+    if(dn) dn.textContent = 'Bank Portal';
+    if(db2) db2.textContent = 'Portfolio Management';
+    switchView('desktop');
+  } else {
+    document.getElementById('view-toggle').style.display = 'none';
+    switchView('mobile');
+  }
+}
+
+window.switchView = (v) => {
+  currentView = v;
+  document.getElementById('vt-mobile').classList.toggle('active', v==='mobile');
+  document.getElementById('vt-desktop').classList.toggle('active', v==='desktop');
+  document.getElementById('mobile-view').style.display = v==='mobile'?'flex':'none';
+  document.getElementById('desktop-view').style.display = v==='desktop'?'block':'none';
+};
+
+window.logout = () => {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('phone-input').value = '';
+};
+
+window.refreshData = async () => {
+  // Show pull indicator as refreshing
+  const pullEl = document.getElementById('pull-indicator');
+  if(pullEl){pullEl.classList.add('visible','refreshing');}
+  try {
+    if (currentView === 'mobile' && currentUser) {
+      const userDoc = await getDoc(doc(db, 'users', currentUser.phone));
+      currentUser = { ...userDoc.data(), phone: currentUser.phone };
+      loadMobileView(currentUser);
+    } else {
+      await loadBankView();
+    }
+    updateLastUpdated();
+  } catch(e){console.error(e);}
+  setTimeout(()=>{if(pullEl){pullEl.classList.remove('visible','refreshing');}},600);
+};
+
+// ── PULL TO REFRESH ──
+(function initPullToRefresh(){
+  let startY=0, pulling=false;
+  const mobileView = document.getElementById('mobile-view');
+  document.addEventListener('touchstart',(e)=>{
+    if(window.scrollY===0 && document.getElementById('app').style.display!=='none'){
+      startY=e.touches[0].clientY; pulling=true;
+    }
+  },{passive:true});
+  document.addEventListener('touchmove',(e)=>{
+    if(!pulling)return;
+    const dy=e.touches[0].clientY-startY;
+    const pullEl=document.getElementById('pull-indicator');
+    if(dy>40 && dy<160 && pullEl){
+      pullEl.classList.add('visible');
+      pullEl.querySelector('.pull-arrow').style.transform=dy>80?'rotate(180deg)':'';
+    }
+  },{passive:true});
+  document.addEventListener('touchend',(e)=>{
+    if(!pulling)return;
+    pulling=false;
+    const pullEl=document.getElementById('pull-indicator');
+    if(pullEl && pullEl.classList.contains('visible')){
+      window.refreshData();
+    }
+  },{passive:true});
+})();
+
+function updateLastUpdated() {
+  const el = document.getElementById('last-updated');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = 'Updated ' + now.toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
+}
+
+setInterval(() => { if (document.getElementById('app').style.display !== 'none') window.refreshData(); }, 60000);
+
+window.toggleTheme = () => {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('nc-theme', isLight ? 'light' : 'dark');
+  updateThemeDrawer(isLight);
+};
+function updateThemeDrawer(isLight) {
+  const di = document.getElementById('drawer-theme-icon');
+  const dl = document.getElementById('drawer-theme-label');
+  if(di) di.textContent = isLight ? '🌙' : '☀️';
+  if(dl) dl.textContent = isLight ? t('switch_dark') : t('switch_light');
+}
+if (localStorage.getItem('nc-theme') === 'light') {
+  document.body.classList.add('light-mode');
+  document.addEventListener('DOMContentLoaded', () => {
+    updateThemeDrawer(true);
+  });
+}
+// Default dark mode drawer label on load
+document.addEventListener('DOMContentLoaded', () => {
+  if(!document.body.classList.contains('light-mode')) updateThemeDrawer(false);
+});
+
+// ── NAV DRAWER ──
+window.openDrawer = () => {
+  document.getElementById('nav-drawer-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+window.closeDrawer = () => {
+  document.getElementById('nav-drawer-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+// ── MOBILE VIEW ──
+// ── ANIMATE COUNT ──
+function animateCount(id, from, to, duration, prefix, suffix) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(from + (to - from) * eased);
+    el.textContent = prefix + current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function loadMobileView(user) {
+  document.getElementById('user-badge').textContent = user.owner_name || user.business_name || 'User';
+  // Update drawer user info
+  const dn = document.getElementById('drawer-user-name');
+  const db2 = document.getElementById('drawer-user-biz');
+  if(dn) dn.textContent = user.owner_name || 'User';
+  if(db2) db2.textContent = user.business_name || '—';
+
+  const sales = user.sales || [];
+  const total = sales.reduce((s,x) => s + (x.amount||0), 0);
+  const count = sales.length;
+  const avg = count > 0 ? Math.round(total/count) : 0;
+  const best = count > 0 ? Math.max(...sales.map(s=>s.amount||0)) : 0;
+  const score = user.credit_score || 0;
+
+  // ── EMPTY STATE: check if new user ──
+  const isNewUser = count === 0 && score === 0;
+  const mobileView = document.getElementById('mobile-view');
+
+  // Reorder: promote roadmap above chart for new users
+  const roadmapCard = document.querySelector('.roadmap-card');
+  const chartCard = document.querySelector('.chart-card');
+  if (isNewUser && roadmapCard && chartCard) {
+    chartCard.parentNode.insertBefore(roadmapCard, chartCard);
+  }
+
+  // Score arc — animated
+  const arc = document.getElementById('score-arc');
+  const circumference = 364.4;
+  const offset = circumference - (score/100) * circumference;
+  arc.style.strokeDashoffset = circumference;
+  document.getElementById('score-num').textContent = '0';
+  setTimeout(() => {
+    arc.style.strokeDashoffset = offset;
+    if (score > 0) animateCount('score-num', 0, score, 1200, '', '');
+    else document.getElementById('score-num').innerHTML = '<span style="font-size:20px;color:#5a6785">N/A</span>';
+  }, 300);
+
+  // Score color
+  let scoreColor, badgeText;
+  if (score >= 70) { scoreColor = '#06d6a0'; badgeText = t('loan_ready'); }
+  else if (score >= 50) { scoreColor = '#ffd166'; badgeText = t('in_progress'); }
+  else if (score > 0) { scoreColor = '#ff6b6b'; badgeText = t('building'); }
+  else { scoreColor = '#5a6785'; badgeText = t('not_scored'); }
+  arc.style.stroke = scoreColor;
+  document.getElementById('score-badge').textContent = badgeText;
+  document.getElementById('score-badge').style.color = scoreColor;
+  document.getElementById('score-badge').style.borderColor = scoreColor + '40';
+  document.getElementById('score-badge').style.background = scoreColor + '15';
+
+  document.getElementById('user-name').textContent = user.owner_name || '—';
+  document.getElementById('user-biz').textContent = user.business_name || '—';
+
+  // Stats — animated counters
+  if (total > 0) animateCount('stat-revenue', 0, total, 1000, 'RM', '');
+  else document.getElementById('stat-revenue').textContent = 'RM0';
+  if (count > 0) animateCount('stat-txn', 0, count, 800, '', '');
+  else document.getElementById('stat-txn').textContent = '0';
+  if (avg > 0) animateCount('stat-avg', 0, avg, 900, 'RM', '');
+  else document.getElementById('stat-avg').textContent = 'RM0';
+  if (best > 0) animateCount('stat-best', 0, best, 1000, 'RM', '');
+  else document.getElementById('stat-best').textContent = 'RM0';
+
+  // Chart
+  buildSalesChart(sales);
+
+  // NEW: Score Breakdown
+  buildScoreBreakdown(user, sales);
+
+  // NEW: Loan CTA
+  updateLoanCTA(user, sales);
+
+  // NEW: Growth Trends
+  buildGrowthTrends(sales);
+
+  // Roadmap
+  buildRoadmap(user, sales);
+
+  // Recent sales
+  buildSalesList(sales);
+
+  // Certificate
+  buildCertificate(user, score);
+
+  // Apply translations
+  applyTranslations();
+}
+
+let currentMobileSales = [];
+let currentChartPeriod = '7d';
+
+window.switchChartPeriod = (period, btn) => {
+  currentChartPeriod = period;
+  document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  buildSalesChart(currentMobileSales, period);
+};
+
+function buildSalesChart(sales, period) {
+  currentMobileSales = sales;
+  if(!period) period = currentChartPeriod;
+  const ctx = document.getElementById('sales-chart').getContext('2d');
+  if (salesChartInstance) salesChartInstance.destroy();
+
+  let dataPoints = [];
+  let labels = [];
+
+  if (period === 'all' && sales.length > 0) {
+    // Group all sales by date
+    const dateMap = {};
+    sales.forEach(s => {
+      if(!s.date) return;
+      dateMap[s.date] = (dateMap[s.date]||0) + (s.amount||0);
+    });
+    const sortedDates = Object.keys(dateMap).sort();
+    // Show up to last 30 entries max for readability
+    const show = sortedDates.slice(-30);
+    show.forEach(d => {
+      labels.push(new Date(d+'T00:00:00').toLocaleDateString('en-MY',{month:'short',day:'numeric'}));
+      dataPoints.push(dateMap[d]);
+    });
+    if(show.length === 0) { labels = ['No data']; dataPoints = [0]; }
+  } else {
+    const days = period === '30d' ? 30 : 7;
+    for (let i=days-1; i>=0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      labels.push(days <= 7
+        ? d.toLocaleDateString('en-MY',{weekday:'short'})
+        : d.toLocaleDateString('en-MY',{month:'short',day:'numeric'}));
+      const dayTotal = sales.filter(s=>s.date===dateStr).reduce((a,s)=>a+(s.amount||0),0);
+      dataPoints.push(dayTotal);
+    }
+  }
+
+  salesChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: dataPoints,
+        backgroundColor: dataPoints.map(v => v > 0 ? 'rgba(0,212,170,0.6)' : 'rgba(90,103,133,0.2)'),
+        borderColor: dataPoints.map(v => v > 0 ? '#00d4aa' : 'transparent'),
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 10 }, maxRotation:45, autoSkip:true, maxTicksLimit:10 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => 'RM'+v } }
+      }
+    }
+  });
+}
+
+function buildRoadmap(user, sales) {
+  const items = [
+    { done: !!(user.owner_name), label: t('profile_created'), desc: t('profile_desc') },
+    { done: sales.length > 0, label: t('first_sale'), desc: t('first_sale_desc') },
+    { done: sales.length >= 10, label: t('ten_txn'), desc: `${sales.length}/10 ${t('transactions').toLowerCase()}` },
+    { done: !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y')), label: t('bank_account'), desc: t('bank_desc') },
+    { done: !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y')), label: t('ssm_reg'), desc: t('ssm_desc') },
+    { done: (user.credit_score||0) >= 60, label: t('score_60'), desc: `${t('credit_score_label')}: ${user.credit_score || '—'}` },
+  ];
+
+  const done = items.filter(i=>i.done).length;
+  const pct = Math.round((done/items.length)*100);
+  document.getElementById('roadmap-pct').textContent = pct + '%';
+  document.getElementById('roadmap-bar').style.width = pct + '%';
+
+  document.getElementById('roadmap-items').innerHTML = items.map(item => `
+    <div class="roadmap-item">
+      <div class="roadmap-check ${item.done ? 'check-done' : 'check-pending'}">${item.done ? '✓' : '○'}</div>
+      <div class="roadmap-text">
+        <strong style="color:${item.done ? 'var(--text)' : 'var(--muted)'}">${item.label}</strong>
+        <span>${item.desc}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildSalesList(sales) {
+  const recent = [...sales].reverse().slice(0, 8);
+  document.getElementById('recent-count').textContent = sales.length + ' records';
+  if (recent.length === 0) {
+    document.getElementById('sales-list').innerHTML = `
+      <div class="empty-hero">
+        <div class="empty-hero-icon">🚀</div>
+        <h3>${t('empty_title')}</h3>
+        <p>${t('empty_desc')}</p>
+        <a href="https://wa.me/15556648532?text=Hi%20BizBuddy!%20I%20want%20to%20log%20my%20first%20sale" target="_blank" class="empty-hero-cta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L0 24l6.335-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 01-5.031-1.388l-.361-.214-3.741.981.999-3.648-.235-.374A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+          ${t('empty_cta')}
+        </a>
+      </div>`;
+    return;
+  }
+  document.getElementById('sales-list').innerHTML = recent.map(s => `
+    <div class="sale-item">
+      <div class="sale-left">
+        <div class="sale-item-name">${s.item || 'Sale'}</div>
+        <div class="sale-date">${s.date || '—'} ${s.source === 'screenshot' ? '📸' : '💬'}</div>
+      </div>
+      <div class="sale-amount">RM${(s.amount||0).toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+function buildCertificate(user, score) {
+  document.getElementById('cert-score').textContent = score > 0 ? score + '/100' : '—';
+  let stars = '—', status = t('cert_generate');
+  if (score >= 85) { stars = '⭐⭐⭐⭐⭐'; status = '✅ ' + t('excellent'); }
+  else if (score >= 70) { stars = '⭐⭐⭐⭐'; status = '✅ ' + t('good'); }
+  else if (score >= 50) { stars = '⭐⭐⭐'; status = '🔄 ' + t('fair'); }
+  else if (score > 0) { stars = '⭐⭐'; status = '📈 ' + t('needs_improvement'); }
+  document.getElementById('cert-stars').textContent = stars;
+  document.getElementById('cert-status').textContent = status;
+  const date = user.score_date || new Date().toISOString().split('T')[0];
+  const phone = user.phone || '0000';
+  document.getElementById('cert-id').textContent = `NC-${phone.slice(-4)}-${date.replace(/-/g,'')}`;
+}
+
+// ══════════════════════════════════════════════
+// ── BILINGUAL SYSTEM (EN / BM) ──
+// ══════════════════════════════════════════════
+let currentLang = localStorage.getItem('nc-lang') || 'en';
+
+const translations = {
+  en: {
+    credit_readiness: 'Credit Readiness Score',
+    total_revenue: 'Total Revenue',
+    transactions: 'Transactions',
+    avg_per_sale: 'Avg per Sale',
+    best_sale: 'Best Sale',
+    sales_activity: 'Sales Activity',
+    loan_roadmap: 'Loan Readiness Roadmap',
+    recent_sales: 'Recent Sales',
+    credit_cert: '⭐ Credit Certificate',
+    save_cert: '📥 Save Certificate as Image',
+    score_breakdown: 'Score Breakdown',
+    ai_scored: 'AI Scored',
+    prequal_title: "You're Pre-Qualified!",
+    prequal_desc: 'Your BizBuddy credit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.',
+    request_assessment: '📋 Request Loan Assessment',
+    prequal_modal_title: 'Loan Pre-Qualification',
+    prequal_modal_sub: 'Review your details before submitting to the bank',
+    credit_score_label: 'Credit Score',
+    verified_sales: 'Verified Sales',
+    sharing_with_bank: "You'll be sharing:",
+    pq_item1: 'Business name & owner name',
+    pq_item2: 'Credit score & breakdown',
+    pq_item3: 'Revenue history & verification rate',
+    pq_item4: 'BizBuddy credit certificate ID',
+    send_to_bank: 'Send to Partner Bank via WhatsApp',
+    pq_note: 'Your data is protected under PDPA Malaysia. The bank will contact you within 2-3 business days.',
+    share_score: 'Share Credit Score via WhatsApp',
+    cert_generate: 'Generate credit score via WhatsApp to get your certificate',
+    excellent: 'Excellent — Highly Loan Ready',
+    good: 'Good — Loan Ready',
+    fair: 'Fair — In Progress',
+    needs_improvement: 'Needs Improvement',
+    loan_ready: '✅ Loan Ready',
+    in_progress: '🔄 In Progress',
+    building: '📈 Building Profile',
+    not_scored: '⏳ Not Yet Scored',
+    vs_last_week: 'vs last week',
+    no_change: 'No change',
+    profile_created: 'Profile Created',
+    profile_desc: 'Personal & business info registered',
+    first_sale: 'First Sale Recorded',
+    first_sale_desc: 'Start building your transaction history',
+    ten_txn: '10+ Transactions',
+    bank_account: 'Business Bank Account',
+    bank_desc: 'Linked to credit profile',
+    ssm_reg: 'SSM Registration',
+    ssm_desc: 'Official business registration',
+    score_60: 'Credit Score 60+',
+    txn_consistency: 'Transaction Consistency',
+    rev_volume: 'Revenue Volume',
+    biz_registration: 'Business Registration',
+    bank_linked: 'Bank Account Linked',
+    txn_frequency: 'Transaction Frequency',
+    biz_age: 'Business Age',
+    empty_title: "Let's get started!",
+    empty_desc: 'Log your first sale via WhatsApp to see your dashboard come alive. Every transaction builds your credit history.',
+    empty_cta: 'Log First Sale via WhatsApp',
+    settings: 'Settings',
+    refresh_data: 'Refresh Data',
+    switch_light: 'Switch to Light',
+    switch_dark: 'Switch to Dark',
+    logout: 'Logout',
+    lang_label: 'Bahasa Melayu',
+  },
+  bm: {
+    credit_readiness: 'Skor Kesediaan Kredit',
+    total_revenue: 'Jumlah Pendapatan',
+    transactions: 'Transaksi',
+    avg_per_sale: 'Purata Jualan',
+    best_sale: 'Jualan Terbaik',
+    sales_activity: 'Aktiviti Jualan',
+    loan_roadmap: 'Peta Kesediaan Pinjaman',
+    recent_sales: 'Jualan Terkini',
+    credit_cert: '⭐ Sijil Kredit',
+    save_cert: '📥 Simpan Sijil sebagai Imej',
+    score_breakdown: 'Pecahan Skor',
+    ai_scored: 'Skor AI',
+    prequal_title: 'Anda Layak!',
+    prequal_desc: 'Skor BizBuddy anda memenuhi syarat untuk penilaian pinjaman mikro. Semak butiran anda dan hantar kepada bank rakan kongsi.',
+    request_assessment: '📋 Mohon Penilaian Pinjaman',
+    prequal_modal_title: 'Pra-Kelayakan Pinjaman',
+    prequal_modal_sub: 'Semak butiran anda sebelum menghantar kepada bank',
+    credit_score_label: 'Skor Kredit',
+    verified_sales: 'Jualan Disahkan',
+    sharing_with_bank: 'Anda akan berkongsi:',
+    pq_item1: 'Nama perniagaan & nama pemilik',
+    pq_item2: 'Skor kredit & pecahan',
+    pq_item3: 'Sejarah pendapatan & kadar pengesahan',
+    pq_item4: 'ID sijil BizBuddy',
+    send_to_bank: 'Hantar kepada Bank via WhatsApp',
+    pq_note: 'Data anda dilindungi di bawah PDPA Malaysia. Bank akan menghubungi anda dalam 2-3 hari bekerja.',
+    share_score: 'Kongsi Skor Kredit via WhatsApp',
+    cert_generate: 'Jana skor kredit melalui WhatsApp untuk mendapatkan sijil anda',
+    excellent: 'Cemerlang — Sangat Layak Pinjaman',
+    good: 'Baik — Layak Pinjaman',
+    fair: 'Sederhana — Dalam Proses',
+    needs_improvement: 'Perlu Peningkatan',
+    loan_ready: '✅ Layak Pinjaman',
+    in_progress: '🔄 Dalam Proses',
+    building: '📈 Membina Profil',
+    not_scored: '⏳ Belum Dinilai',
+    vs_last_week: 'vs minggu lepas',
+    no_change: 'Tiada perubahan',
+    profile_created: 'Profil Dicipta',
+    profile_desc: 'Maklumat peribadi & perniagaan didaftarkan',
+    first_sale: 'Jualan Pertama Direkod',
+    first_sale_desc: 'Mula membina sejarah transaksi anda',
+    ten_txn: '10+ Transaksi',
+    bank_account: 'Akaun Bank Perniagaan',
+    bank_desc: 'Disambung ke profil kredit',
+    ssm_reg: 'Pendaftaran SSM',
+    ssm_desc: 'Pendaftaran perniagaan rasmi',
+    score_60: 'Skor Kredit 60+',
+    txn_consistency: 'Konsistensi Transaksi',
+    rev_volume: 'Jumlah Pendapatan',
+    biz_registration: 'Pendaftaran Perniagaan',
+    bank_linked: 'Akaun Bank Disambung',
+    txn_frequency: 'Kekerapan Transaksi',
+    biz_age: 'Usia Perniagaan',
+    empty_title: 'Jom mula!',
+    empty_desc: 'Rekod jualan pertama anda melalui WhatsApp untuk melihat papan pemuka anda. Setiap transaksi membina sejarah kredit anda.',
+    empty_cta: 'Rekod Jualan Pertama via WhatsApp',
+    settings: 'Tetapan',
+    refresh_data: 'Muat Semula Data',
+    switch_light: 'Tukar ke Cerah',
+    switch_dark: 'Tukar ke Gelap',
+    logout: 'Log Keluar',
+    lang_label: 'English',
+  }
+};
+
+function t(key) { return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key; }
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if (val) el.textContent = val;
+  });
+  // Update drawer labels
+  const dl = document.getElementById('drawer-lang-label');
+  if(dl) dl.textContent = t('lang_label');
+  const settingsH = document.querySelector('.nav-drawer-header h3');
+  if(settingsH) settingsH.textContent = t('settings');
+  // Update drawer items text
+  const refreshBtn = document.querySelector('.drawer-item:nth-child(2)');
+  // Re-apply theme label
+  updateThemeDrawer(document.body.classList.contains('light-mode'));
+}
+
+window.toggleLang = () => {
+  currentLang = currentLang === 'en' ? 'bm' : 'en';
+  localStorage.setItem('nc-lang', currentLang);
+  applyTranslations();
+  // Re-render dynamic content if user is loaded
+  if (currentUser) {
+    loadMobileView(currentUser);
+  }
+};
+
+// Apply on load
+document.addEventListener('DOMContentLoaded', () => {
+  if (currentLang !== 'en') applyTranslations();
+});
+
+// ══════════════════════════════════════════════
+// ── SCORE BREAKDOWN ──
+// ══════════════════════════════════════════════
+function buildScoreBreakdown(user, sales) {
+  const score = user.credit_score || 0;
+  const container = document.getElementById('breakdown-rows');
+  const card = document.getElementById('score-breakdown-card');
+  if (!container || !card) return;
+
+  if (score === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const count = sales.length;
+  const total = sales.reduce((s,x) => s + (x.amount||0), 0);
+  const hasSSM = !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y'));
+  const hasBank = !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y'));
+
+  // Calculate factor scores (these simulate the AI scoring weights)
+  const factors = [
+    {
+      icon: '📊', key: 'txn_consistency', weight: 25,
+      value: Math.min(100, count >= 10 ? 90 + Math.min(10, (count-10)*0.5) : count * 9),
+      color: '#00d4aa',
+      sub: count >= 10 ? count + ' transactions ✓' : count + '/10 ' + t('transactions').toLowerCase()
+    },
+    {
+      icon: '💰', key: 'rev_volume', weight: 20,
+      value: Math.min(100, total >= 5000 ? 85 + Math.min(15, (total-5000)/1000) : (total/5000)*85),
+      color: '#6c63ff',
+      sub: 'RM' + total.toLocaleString()
+    },
+    {
+      icon: '📋', key: 'biz_registration', weight: 15,
+      value: hasSSM ? 100 : 0,
+      color: '#ffd166',
+      sub: hasSSM ? 'SSM ✓' : 'SSM pending'
+    },
+    {
+      icon: '🏦', key: 'bank_linked', weight: 15,
+      value: hasBank ? 100 : 0,
+      color: '#06d6a0',
+      sub: hasBank ? t('bank_account') + ' ✓' : 'Not linked'
+    },
+    {
+      icon: '🔄', key: 'txn_frequency', weight: 15,
+      value: Math.min(100, count >= 5 ? 70 + Math.min(30, (count-5)*3) : count * 14),
+      color: '#ff9f43',
+      sub: count > 0 ? (count/7).toFixed(1) + '/day avg' : '—'
+    },
+    {
+      icon: '📅', key: 'biz_age', weight: 10,
+      value: score > 0 ? Math.min(100, 60 + Math.random()*30) : 0,
+      color: '#a29bfe',
+      sub: user.score_date ? 'Since ' + user.score_date : 'Active'
+    },
+  ];
+
+  container.innerHTML = factors.map(f => `
+    <div class="breakdown-row">
+      <div class="breakdown-icon">${f.icon}</div>
+      <div class="breakdown-info">
+        <div class="breakdown-label">${t(f.key)}</div>
+        <div class="breakdown-sublabel">${f.sub}</div>
+        <div class="breakdown-bar-bg">
+          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${Math.round(f.value)}"></div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="breakdown-value" style="color:${f.color};">${Math.round(f.value * f.weight / 100)}</div>
+        <div class="breakdown-weight">${f.weight}%</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    container.querySelectorAll('.breakdown-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.target + '%';
+    });
+  }, 200);
+}
+
+// ══════════════════════════════════════════════
+// ── LOAN CTA + PRE-QUAL MODAL ──
+// ══════════════════════════════════════════════
+function updateLoanCTA(user, sales) {
+  const card = document.getElementById('loan-cta-card');
+  if (!card) return;
+  const score = user.credit_score || 0;
+  if (score >= 70) {
+    card.classList.add('visible');
+  } else {
+    card.classList.remove('visible');
+  }
+}
+
+window.openPrequalModal = () => {
+  if (!currentUser) return;
+  const score = currentUser.credit_score || 0;
+  const sales = currentUser.sales || [];
+  const total = sales.reduce((s,x) => s + (x.amount||0), 0);
+  const verified = sales.filter(s => s.source === 'screenshot').length;
+  const verifiedPct = sales.length > 0 ? Math.round((verified/sales.length)*100) : 0;
+
+  document.getElementById('pq-score').textContent = score + '/100';
+  document.getElementById('pq-revenue').textContent = 'RM' + total.toLocaleString();
+  document.getElementById('pq-txn').textContent = sales.length;
+  document.getElementById('pq-verified').textContent = verifiedPct + '%';
+
+  document.getElementById('prequal-modal').classList.add('open');
+};
+
+window.closePrequalModal = () => {
+  document.getElementById('prequal-modal').classList.remove('open');
+};
+
+document.getElementById('prequal-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('prequal-modal')) closePrequalModal();
+});
+
+window.submitPrequal = () => {
+  if (!currentUser) return;
+  const score = currentUser.credit_score || 0;
+  const name = currentUser.owner_name || 'Peniaga';
+  const biz = currentUser.business_name || 'Perniagaan';
+  const sales = currentUser.sales || [];
+  const total = sales.reduce((s,x) => s + (x.amount||0), 0);
+  const verified = sales.filter(s => s.source === 'screenshot').length;
+  const verifiedPct = sales.length > 0 ? Math.round((verified/sales.length)*100) : 0;
+  const certDate = currentUser.score_date || new Date().toISOString().split('T')[0];
+  const certId = `NC-${(currentUser.phone||'0000').slice(-4)}-${certDate.replace(/-/g,'')}`;
+
+  const msg = `🏦 *BizBuddy — Loan Pre-Qualification*\n\n` +
+    `👤 *${name}* · ${biz}\n` +
+    `⭐ Credit Score: *${score}/100*\n` +
+    `💰 Total Revenue: *RM${total.toLocaleString()}*\n` +
+    `📦 Transactions: *${sales.length}* (${verifiedPct}% verified)\n` +
+    `🆔 Certificate: *${certId}*\n\n` +
+    `✅ This MSME has been pre-qualified by BizBuddy AI scoring.\n` +
+    `📞 Contact: +${currentUser.phone}\n\n` +
+    `🔒 Data shared with consent under PDPA Malaysia.`;
+
+  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+  closePrequalModal();
+};
+
+// ══════════════════════════════════════════════
+// ── GROWTH / TREND INDICATORS ──
+// ══════════════════════════════════════════════
+function buildGrowthTrends(sales) {
+  const now = new Date();
+  const thisWeekSales = sales.filter(s => {
+    if (!s.date) return false;
+    const d = new Date(s.date + 'T00:00:00');
+    const diff = (now - d) / (1000*60*60*24);
+    return diff >= 0 && diff < 7;
+  });
+  const lastWeekSales = sales.filter(s => {
+    if (!s.date) return false;
+    const d = new Date(s.date + 'T00:00:00');
+    const diff = (now - d) / (1000*60*60*24);
+    return diff >= 7 && diff < 14;
+  });
+
+  const thisRev = thisWeekSales.reduce((a,x) => a + (x.amount||0), 0);
+  const lastRev = lastWeekSales.reduce((a,x) => a + (x.amount||0), 0);
+  const thisTxn = thisWeekSales.length;
+  const lastTxn = lastWeekSales.length;
+  const thisAvg = thisTxn > 0 ? Math.round(thisRev/thisTxn) : 0;
+  const lastAvg = lastTxn > 0 ? Math.round(lastRev/lastTxn) : 0;
+
+  function trendHTML(current, previous, prefix) {
+    if (previous === 0 && current === 0) return `<span class="trend-neutral">${t('no_change')}</span>`;
+    if (previous === 0 && current > 0) return `<span class="trend-up">↑ ${t('vs_last_week')}</span>`;
+    const pct = Math.round(((current - previous) / previous) * 100);
+    if (pct > 0) return `<span class="trend-up">↑ ${pct}% ${t('vs_last_week')}</span>`;
+    if (pct < 0) return `<span class="trend-down">↓ ${Math.abs(pct)}% ${t('vs_last_week')}</span>`;
+    return `<span class="trend-neutral">${t('no_change')}</span>`;
+  }
+
+  const tRev = document.getElementById('trend-revenue');
+  const tTxn = document.getElementById('trend-txn');
+  const tAvg = document.getElementById('trend-avg');
+  const tBest = document.getElementById('trend-best');
+
+  if (tRev) tRev.innerHTML = trendHTML(thisRev, lastRev, 'RM');
+  if (tTxn) tTxn.innerHTML = trendHTML(thisTxn, lastTxn, '');
+  if (tAvg) tAvg.innerHTML = trendHTML(thisAvg, lastAvg, 'RM');
+  // Best sale doesn't have a weekly trend, show total instead
+  if (tBest && sales.length > 0) {
+    const thisBest = thisWeekSales.length > 0 ? Math.max(...thisWeekSales.map(s=>s.amount||0)) : 0;
+    const lastBest = lastWeekSales.length > 0 ? Math.max(...lastWeekSales.map(s=>s.amount||0)) : 0;
+    tBest.innerHTML = trendHTML(thisBest, lastBest, 'RM');
+  }
+}
+
+// ── BANK VIEW ──
+async function loadBankView() {
+  document.getElementById('user-badge').textContent = 'Bank Portal';
+  // Show loading state
+  const tbody = document.getElementById('msme-table-body');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;"><div class="loader-ring" style="margin:0 auto 12px;width:28px;height:28px;border-width:2px;"></div>Loading portfolio data...</td></tr>';
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    allUsers = [];
+    snap.forEach(d => allUsers.push({ ...d.data(), phone: d.id }));
+    renderBankView(allUsers);
+    updateLastUpdated();
+  } catch(e) {
+    console.error(e);
+    if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ff6b6b;padding:32px;">Failed to load data. Please try again.</td></tr>';
+  }
+}
+
+// ── CERTIFICATE DOWNLOAD ──
+window.downloadCertificate = async () => {
+  const certEl = document.getElementById('cert-card-el');
+  if (!certEl || typeof html2canvas === 'undefined') { alert('Could not generate certificate image.'); return; }
+  const btn = certEl.querySelector('.cert-download-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generating...';
+  btn.classList.add('btn-loading');
+  try {
+    const canvas = await html2canvas(certEl, {
+      backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = 'BizBuddy-Certificate.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) { console.error(e); alert('Failed to generate image.'); }
+  btn.textContent = origText;
+  btn.classList.remove('btn-loading');
+};
+
+function renderBankView(users) {
+  const total = users.length;
+  const loanReady = users.filter(u => (u.credit_score||0) >= 70).length;
+  const scores = users.map(u => u.credit_score||0).filter(s => s > 0);
+  const avgScore = scores.length > 0 ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const totalRev = users.reduce((s,u) => s + (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0), 0);
+
+  animateCount('d-total-msme', 0, total, 800, '', '');
+  animateCount('d-loan-ready', 0, loanReady, 900, '', '');
+  document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + '% of portfolio' : '—';
+  if (avgScore) animateCount('d-avg-score', 0, avgScore, 1000, '', '');
+  else document.getElementById('d-avg-score').textContent = '—';
+  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', '');
+
+  // Table
+  const tbody = document.getElementById('msme-table-body');
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;">No MSMEs registered yet</td></tr>';
+  } else {
+    const avatarColors = ['#00d4aa','#6c63ff','#ff6b6b','#ffd166','#06d6a0','#ff9f43','#a29bfe','#fd79a8','#00b894','#e17055'];
+    tbody.innerHTML = users.map((u, idx) => {
+      const uSales = u.sales || [];
+      const uRev = uSales.reduce((a,x)=>a+(x.amount||0),0);
+      const score = u.credit_score || 0;
+      let scoreCls = score >= 70 ? 'score-high' : score >= 50 ? 'score-mid' : 'score-low';
+      let statusTxt, statusCls;
+      if (score >= 70) { statusTxt = 'Loan Ready'; statusCls = 'status-ready'; }
+      else if (score >= 50) { statusTxt = 'In Progress'; statusCls = 'status-progress'; }
+      else { statusTxt = 'Building'; statusCls = 'status-building'; }
+      const initial = (u.owner_name||'?')[0].toUpperCase();
+      const color = avatarColors[idx % avatarColors.length];
+      const safeU = encodeURIComponent(JSON.stringify({owner_name:u.owner_name,business_name:u.business_name,product:u.product,credit_score:u.credit_score,phone:u.phone,sales:u.sales}));
+      return `<tr style="cursor:pointer;" onclick="openModal('${u.phone}')" data-name="${(u.owner_name||'').toLowerCase()}" data-biz="${(u.business_name||'').toLowerCase()}" data-status="${statusCls}">
+        <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${color};">${initial}</div><strong>${u.owner_name||'—'}</strong></div></td>
+        <td>${u.business_name||'—'}</td>
+        <td>${u.product||'—'}</td>
+        <td>RM${uRev.toLocaleString()}</td>
+        <td><span class="score-pill ${scoreCls}">${score||'N/A'}</span></td>
+        <td><span class="status-pill ${statusCls}">${statusTxt}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Score distribution
+  const ranges = [
+    { label: '80–100', min:80, max:100, color:'#06d6a0' },
+    { label: '60–79',  min:60, max:79,  color:'#00d4aa' },
+    { label: '40–59',  min:40, max:59,  color:'#ffd166' },
+    { label: '20–39',  min:20, max:39,  color:'#ff9f43' },
+    { label: '0–19',   min:0,  max:19,  color:'#ff6b6b' },
+  ];
+  const maxCount = Math.max(...ranges.map(r => scores.filter(s=>s>=r.min&&s<=r.max).length), 1);
+  document.getElementById('dist-bars').innerHTML = ranges.map(r => {
+    const cnt = scores.filter(s=>s>=r.min&&s<=r.max).length;
+    const w = Math.round(cnt/maxCount*100);
+    return `<div class="dist-row">
+      <div class="dist-label">${r.label}</div>
+      <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${w}%;background:${r.color}"></div></div>
+      <div class="dist-count">${cnt}</div>
+    </div>`;
+  }).join('');
+
+  // Portfolio pie
+  const pCtx = document.getElementById('portfolio-chart').getContext('2d');
+  if (portfolioChartInstance) portfolioChartInstance.destroy();
+  const rCounts = [
+    scores.filter(s=>s>=70).length,
+    scores.filter(s=>s>=50&&s<70).length,
+    scores.filter(s=>s>0&&s<50).length,
+    users.filter(u=>!u.credit_score).length,
+  ];
+  portfolioChartInstance = new Chart(pCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Loan Ready', 'In Progress', 'Building', 'Unscored'],
+      datasets: [{ data: rCounts, backgroundColor: ['#06d6a0','#ffd166','#ff6b6b','#2a3248'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#5a6785', font: { size: 11 }, padding: 12 } }
+      },
+      cutout: '65%'
+    }
+  });
+
+  // Revenue chart
+  const rCtx = document.getElementById('revenue-chart').getContext('2d');
+  if (revenueChartInstance) revenueChartInstance.destroy();
+  const allSales = users.flatMap(u => u.sales||[]);
+  const last7 = [];
+  const rLabels = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().split('T')[0];
+    rLabels.push(d.toLocaleDateString('en-MY',{weekday:'short'}));
+    last7.push(allSales.filter(s=>s.date===ds).reduce((a,s)=>a+(s.amount||0),0));
+  }
+  revenueChartInstance = new Chart(rCtx, {
+    type: 'line',
+    data: {
+      labels: rLabels,
+      datasets: [{
+        data: last7,
+        borderColor: '#00d4aa',
+        backgroundColor: 'rgba(0,212,170,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#00d4aa',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => 'RM'+v } }
+      }
+    }
+  });
+
+  // Loan pipeline
+  const loanReady_users = users.filter(u=>(u.credit_score||0)>=70);
+  const pipeline = document.getElementById('loan-pipeline');
+  if (loanReady_users.length === 0) {
+    pipeline.innerHTML = '<div class="empty-state"><div>📋</div><p>No loan-ready MSMEs yet. MSMEs need score 70+ to appear here.</p></div>';
+  } else {
+    pipeline.innerHTML = loanReady_users.map(u => {
+      const uRev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
+      return `<div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:13px;font-weight:500;">${u.owner_name||'—'} · ${u.business_name||'—'}</div>
+          <div style="font-size:11px;color:#5a6785;margin-top:2px;">${u.product||'—'} · RM${uRev.toLocaleString()} recorded</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#06d6a0;">${u.credit_score}</div>
+          <div style="font-size:10px;color:#5a6785;">score</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // Draw Malaysia map
+  setTimeout(() => drawMalaysiaMap(users), 100);
+}
+
+// Allow Enter key on inputs
+document.getElementById('phone-input').addEventListener('keydown', e => { if(e.key==='Enter') window.handleLogin(); });
+
+// ── MODAL ──
+window.openModal = (phone) => {
+  const u = allUsers.find(x => x.phone === phone);
+  if (!u) return;
+  const avatarColors = ['#00d4aa','#6c63ff','#ff6b6b','#ffd166','#06d6a0','#ff9f43','#a29bfe','#fd79a8','#00b894','#e17055'];
+  const idx = allUsers.indexOf(u);
+  const color = avatarColors[idx % avatarColors.length];
+  const initial = (u.owner_name||'?')[0].toUpperCase();
+  const score = u.credit_score || 0;
+  const sales = u.sales || [];
+  const rev = sales.reduce((a,x)=>a+(x.amount||0),0);
+  let statusTxt, statusColor;
+  if (score >= 70) { statusTxt = '✅ Loan Ready'; statusColor = '#06d6a0'; }
+  else if (score >= 50) { statusTxt = '🔄 In Progress'; statusColor = '#ffd166'; }
+  else if (score > 0) { statusTxt = '📈 Building'; statusColor = '#ff6b6b'; }
+  else { statusTxt = '⏳ Unscored'; statusColor = '#5a6785'; }
+
+  document.getElementById('modal-avatar').style.background = color;
+  document.getElementById('modal-avatar').textContent = initial;
+  document.getElementById('modal-name').textContent = u.owner_name || '—';
+  document.getElementById('modal-biz').textContent = u.business_name || '—';
+  document.getElementById('modal-product').textContent = u.product || '—';
+  document.getElementById('modal-score').textContent = score || 'N/A';
+  document.getElementById('modal-score').style.color = statusColor;
+  document.getElementById('modal-rev').textContent = 'RM' + rev.toLocaleString();
+  document.getElementById('modal-txn').textContent = sales.length;
+  document.getElementById('modal-status').textContent = statusTxt;
+  document.getElementById('modal-status').style.color = statusColor;
+
+  const recent = [...sales].reverse().slice(0, 5);
+  document.getElementById('modal-sales').innerHTML = recent.length > 0
+    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">RM${(s.amount||0).toLocaleString()}</span></div>`).join('')
+    : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;">No sales recorded yet</div>';
+
+  document.getElementById('modal-phone-row').textContent = `📱 WhatsApp: +${u.phone}`;
+  document.getElementById('msme-modal').classList.add('open');
+};
+
+window.closeModal = () => {
+  document.getElementById('msme-modal').classList.remove('open');
+};
+
+document.getElementById('msme-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('msme-modal')) closeModal();
+});
+
+// ── SEARCH & FILTER ──
+window.filterTable = () => {
+  const search = (document.getElementById('msme-search')?.value || '').toLowerCase();
+  const filter = document.getElementById('msme-filter')?.value || 'all';
+  const rows = document.querySelectorAll('#msme-table-body tr[data-name]');
+  rows.forEach(row => {
+    const name = row.dataset.name || '';
+    const biz = row.dataset.biz || '';
+    const status = row.dataset.status || '';
+    const matchSearch = !search || name.includes(search) || biz.includes(search);
+    const matchFilter = filter === 'all'
+      || (filter === 'ready' && status === 'status-ready')
+      || (filter === 'progress' && status === 'status-progress')
+      || (filter === 'building' && status === 'status-building');
+    row.style.display = matchSearch && matchFilter ? '' : 'none';
+  });
+};
+
+// ── WHATSAPP SHARE ──
+window.shareViaWhatsApp = () => {
+  if (!currentUser) return;
+  const score = currentUser.credit_score || 0;
+  const name = currentUser.owner_name || 'Peniaga';
+  const biz = currentUser.business_name || 'Perniagaan saya';
+  let status, emoji;
+  if (score >= 70) { status = 'Loan Ready ✅'; emoji = '🎉'; }
+  else if (score >= 50) { status = 'In Progress 🔄'; emoji = '💪'; }
+  else if (score > 0) { status = 'Building 📈'; emoji = '🚀'; }
+  else { status = 'Not yet scored'; emoji = '⏳'; }
+
+  const msg = `${emoji} *BizBuddy Credit Score Update!*
+
+` +
+    `👤 ${name} · ${biz}
+` +
+    `⭐ Credit Score: *${score > 0 ? score + '/100' : 'Not yet generated'}*
+` +
+    `📊 Status: *${status}*
+
+` +
+    `💡 Track your business finances & build credit history with BizBuddy!
+` +
+    `👉 wa.me/15556648532`;
+
+  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+};
+
+window.exportPDF = () => {
+  const users = allUsers;
+  const total = users.length;
+  const loanReady = users.filter(u=>(u.credit_score||0)>=70).length;
+  const scores = users.map(u=>u.credit_score||0).filter(s=>s>0);
+  const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const totalRev = users.reduce((s,u)=>(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0)+s,0);
+  const date = new Date().toLocaleDateString('en-MY',{year:'numeric',month:'long',day:'numeric'});
+  const rows = users.map(u => {
+    const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
+    const score = u.credit_score||0;
+    const status = score>=70?'Loan Ready':score>=50?'In Progress':'Building';
+    return `<tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;">${u.owner_name||'—'}</td>
+      <td style="padding:8px 12px;">${u.business_name||'—'}</td>
+      <td style="padding:8px 12px;">${u.product||'—'}</td>
+      <td style="padding:8px 12px;">RM${rev.toLocaleString()}</td>
+      <td style="padding:8px 12px;font-weight:700;color:${score>=70?'#00a67e':score>=50?'#e6a817':'#e55353'}">${score||'N/A'}</td>
+      <td style="padding:8px 12px;">${status}</td>
+    </tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>BizBuddy Portfolio Report</title>
+<style>body{font-family:Arial,sans-serif;padding:40px;color:#1a2234;}h1{color:#00b894;font-size:24px;margin-bottom:4px;}.subtitle{color:#7a8aaa;font-size:13px;margin-bottom:32px;}.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:32px;}.stat{background:#f0f4f8;border-radius:12px;padding:16px;border-left:4px solid #00b894;}.stat-val{font-size:28px;font-weight:800;}.stat-label{font-size:12px;color:#7a8aaa;margin-top:4px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#f0f4f8;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#7a8aaa;}.footer{margin-top:40px;font-size:11px;color:#7a8aaa;text-align:center;border-top:1px solid #eee;padding-top:16px;}</style>
+</head><body>
+<h1>BizBuddy</h1><div class="subtitle">Portfolio Report — Generated ${date}</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total MSMEs</div></div>
+  <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">Loan Ready (70+)</div></div>
+  <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">Avg Credit Score</div></div>
+  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">Total Revenue Tracked</div></div>
+</div>
+<table><thead><tr><th>Name</th><th>Business</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
+<tbody>${rows}</tbody></table>
+<div class="footer">Powered by BizBuddy AI · Confidential Portfolio Report · ${date}</div>
+</body></html>`;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+};
+// MALAYSIA MAP — HiDPI SUPPORT
+function drawMalaysiaMap(users) {
+  const canvas = document.getElementById('malaysia-map');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = canvas.offsetWidth || 900;
+  const displayH = 320;
+  canvas.width = displayW * dpr;
+  canvas.height = displayH * dpr;
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+  ctx.scale(dpr, dpr);
+  const W = displayW, H = displayH;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#161b27'; ctx.fillRect(0,0,W,H);
+  const sX=W/900, sY=H/320;
+  function sp(x,y){return [x*sX,y*sY];}
+
+  function drawShape(pts, fillColor, strokeColor) {
+    ctx.beginPath();
+    pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(...sp(...p)); else ctx.lineTo(...sp(...p)); });
+    ctx.closePath();
+    ctx.fillStyle=fillColor; ctx.fill();
+    ctx.strokeStyle=strokeColor; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  drawShape([[120,60],[140,55],[160,58],[175,65],[185,80],[190,100],[195,120],[200,140],[205,160],[200,180],[190,200],[180,215],[170,225],[160,230],[150,235],[140,240],[130,238],[120,232],[110,220],[105,205],[100,185],[98,165],[100,145],[105,125],[108,105],[110,85],[115,70],[120,60]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
+  drawShape([[580,80],[620,70],[660,75],[700,85],[720,100],[730,120],[725,140],[710,155],[690,160],[665,158],[640,150],[615,140],[595,125],[580,110],[578,95],[580,80]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
+  drawShape([[420,120],[460,100],[510,90],[550,85],[580,90],[600,110],[610,130],[605,155],[590,175],[565,190],[535,200],[500,210],[465,215],[440,210],[420,195],[405,175],[400,155],[405,135],[415,125],[420,120]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
+
+  ctx.fillStyle='rgba(90,103,133,0.5)'; ctx.font=`${9*sX}px DM Sans`; ctx.textAlign='center';
+  [['South China Sea',350,50],['Strait of Malacca',70,155],['Sabah',650,200],['Sarawak',500,250],['Peninsular Malaysia',148,270]]
+  .forEach(([t,x,y])=>ctx.fillText(t,...sp(x,y)));
+
+  const positions=[[148,148],[155,143],[130,110],[162,210],[120,82],[175,90],[655,115],[500,155],[172,150],[118,70],[188,110],[140,190],[160,175],[135,160],[670,130]];
+  const dots=[];
+
+  users.forEach((user,idx)=>{
+    const score=user.credit_score||0;
+    let color='#5a6785',glow='rgba(90,103,133,0.3)';
+    if(score>=70){color='#06d6a0';glow='rgba(6,214,160,0.4)';}
+    else if(score>=50){color='#ffd166';glow='rgba(255,209,102,0.4)';}
+    else if(score>0){color='#ff6b6b';glow='rgba(255,107,107,0.4)';}
+    const base=positions[idx%positions.length];
+    const ox=(Math.random()-0.5)*12, oy=(Math.random()-0.5)*12;
+    const [cx,cy]=sp(base[0]+ox,base[1]+oy);
+    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,14*sX);
+    grad.addColorStop(0,glow); grad.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(cx,cy,14*sX,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,6*sX,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle='rgba(13,17,23,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
+    dots.push({x:cx,y:cy,user,color});
+  });
+
+  const tooltip=document.getElementById('map-tooltip');
+  canvas.onmousemove=function(e){
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(W/rect.width), my=(e.clientY-rect.top)*(H/rect.height);
+    let found=null;
+    dots.forEach(d=>{ if(Math.sqrt((mx-d.x)**2+(my-d.y)**2)<16) found=d; });
+    if(found){
+      const u=found.user, score=u.credit_score||0;
+      const rev=(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
+      const status=score>=70?'✅ Loan Ready':score>=50?'🔄 In Progress':score>0?'📈 Building':'⏳ Unscored';
+      tooltip.innerHTML=`<strong>${u.owner_name||'—'}</strong><div style="color:#5a6785;font-size:11px;">${u.business_name||'—'}</div><div style="margin-top:6px;color:${found.color};font-weight:700;">Score: ${score||'N/A'}/100</div><div style="font-size:11px;color:#5a6785;">Revenue: RM${rev.toLocaleString()}</div><div style="font-size:11px;margin-top:2px;">${status}</div>`;
+      tooltip.style.display='block';
+      tooltip.style.left=(e.clientX-rect.left+14)+'px';
+      tooltip.style.top=(e.clientY-rect.top-10)+'px';
+      canvas.style.cursor='pointer';
+    } else { tooltip.style.display='none'; canvas.style.cursor='default'; }
+  };
+  canvas.onmouseleave=()=>{ tooltip.style.display='none'; };
+}
+window.drawMalaysiaMap=drawMalaysiaMap;
+</script>
+</body>
+</html>
