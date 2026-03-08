@@ -96,12 +96,17 @@ def handle_text(phone, text):
         return
 
     if not user.exists:
-        user_ref.set({"state": "ask_owner_name", "sales": [], "language": "bm"})
+        user_ref.set({"state": "ask_consent", "sales": [], "language": "bm"})
         send_message(phone,
             "👋 *Selamat datang ke BizBuddy!*\n\n"
-            "Saya akan bantu awak bina profil perniagaan dalam masa 5 minit.\n\n"
+            "Saya akan bantu awak bina profil perniagaan & skor kredit dalam masa 5 minit.\n\n"
+            "🔒 *Privasi & Data Awak:*\n"
+            "• BizBuddy menyimpan data perniagaan awak (nama, jualan, produk) untuk membina profil kredit.\n"
+            "• Data awak *tidak akan dikongsi* dengan mana-mana pihak tanpa kebenaran awak.\n"
+            "• Awak boleh padam semua data bila-bila masa dengan taip *RESET*.\n\n"
             "💡 _Tip: Taip ENGLISH untuk tukar bahasa_\n\n"
-            "Soalan 1️⃣: Apa *nama awak*?"
+            "Taip *SETUJU* untuk teruskan\n"
+            "Taip *ENGLISH* dahulu jika mahu tukar bahasa"
         )
         return
 
@@ -134,8 +139,46 @@ def handle_text(phone, text):
         show_loan_checklist(phone, user_ref)
         return
 
+    # DATA command — privacy: show stored data
+    if text_upper == "DATA":
+        show_stored_data(phone, user_ref)
+        return
+
     # Onboarding states
-    if state == "ask_owner_name":
+    if state == "ask_consent":
+        if text_upper in ["SETUJU", "AGREE", "YES", "YA", "OK"]:
+            user_ref.update({
+                "state": "ask_owner_name",
+                "consent": True,
+                "consent_date": str(datetime.now())
+            })
+            if lang == "bm":
+                send_message(phone,
+                    "✅ *Terima kasih!* Data awak dilindungi.\n\n"
+                    "Jom mulakan! 🚀\n\n"
+                    "Soalan 1️⃣: Apa *nama awak*?"
+                )
+            else:
+                send_message(phone,
+                    "✅ *Thank you!* Your data is protected.\n\n"
+                    "Let's get started! 🚀\n\n"
+                    "Question 1️⃣: What is your *name*?"
+                )
+        else:
+            if lang == "bm":
+                send_message(phone,
+                    "⚠️ Awak perlu bersetuju untuk menggunakan BizBuddy.\n\n"
+                    "Taip *SETUJU* untuk teruskan\n"
+                    "Taip *ENGLISH* untuk tukar bahasa dahulu"
+                )
+            else:
+                send_message(phone,
+                    "⚠️ You need to agree to use BizBuddy.\n\n"
+                    "Type *AGREE* to continue\n"
+                    "Type *BM* to switch to Bahasa Malaysia first"
+                )
+
+    elif state == "ask_owner_name":
         user_ref.update({"owner_name": text, "state": "ask_business_name"})
         if lang == "bm":
             send_message(phone, f"Hai *{text}*! 😊\n\nSoalan 2️⃣: Apa *nama perniagaan* awak?\n_(Contoh: Kuih Farah, Tudung Siti, Kedai Ahmad)_")
@@ -224,7 +267,7 @@ def handle_text(phone, text):
                 )
         else:
             # Route menu numbers directly, smart_handle for natural language
-            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET"]:
+            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA"]:
                 handle_menu(phone, text, user_ref)
             else:
                 smart_handle(phone, text, user_ref)
@@ -286,6 +329,9 @@ def smart_handle(phone, text, user_ref):
         return
     if text_upper in ["PINJAMAN","LOAN"]:
         show_loan_checklist(phone, user_ref)
+        return
+    if text_upper == "DATA":
+        show_stored_data(phone, user_ref)
         return
     if text_upper == "RESET":
         user_ref.delete()
@@ -428,12 +474,13 @@ def handle_menu(phone, text, user_ref):
                 "2️⃣ Jana Skor Kredit Saya\n"
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
                 "4️⃣ Hantar Gambar Resit/Bayaran\n"
-                "5️⃣ Ringkasan Jualan Saya\n\n"
+                "5️⃣ Ringkasan Jualan Saya\n"
                 "6️⃣ Jana Kandungan Media Sosial\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
                 "💡 Taip *ENGLISH* untuk tukar bahasa\n"
-                "💡 Taip *PINJAMAN* untuk semak kelayakan pinjaman\n\n"
+                "💡 Taip *PINJAMAN* untuk semak kelayakan pinjaman\n"
+                "🔒 Taip *DATA* untuk lihat data yang disimpan\n\n"
                 "_Balas dengan nombor pilihan_"
             )
         else:
@@ -448,7 +495,8 @@ def handle_menu(phone, text, user_ref):
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
                 "💡 Type *BM* to switch to Bahasa Malaysia\n"
-                "💡 Type *LOAN* to check loan eligibility\n\n"
+                "💡 Type *LOAN* to check loan eligibility\n"
+                "🔒 Type *DATA* to view your stored data\n\n"
                 "_Reply with your choice number_"
             )
     elif t_upper == "1":
@@ -576,8 +624,225 @@ def handle_ai_chat(phone, text, user_ref):
         send_message(phone, f"🤖 *AI Advisor:*\n\n{response.text}\n\n_(Ask more or type MENU)_")
 
 # ─────────────────────────────────────
-# CREDIT SCORE
+# SHOW STORED DATA (Privacy)
 # ─────────────────────────────────────
+def show_stored_data(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    sales = user_data.get("sales", [])
+    expenses = user_data.get("expenses", [])
+
+    if lang == "bm":
+        send_message(phone,
+            "🔒 *DATA YANG DISIMPAN TENTANG AWAK*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 Nama: {user_data.get('owner_name', '-')}\n"
+            f"🏪 Perniagaan: {user_data.get('business_name', '-')}\n"
+            f"📦 Produk: {user_data.get('product', '-')}\n"
+            f"💵 Pendapatan: {user_data.get('monthly_revenue', '-')}\n"
+            f"⏱️ Lama Beroperasi: {user_data.get('biz_age', '-')}\n"
+            f"🏦 Akaun Bank: {user_data.get('has_bank_account', '-')}\n"
+            f"📝 SSM: {user_data.get('has_ssm', '-')}\n"
+            f"⭐ Skor Kredit: {user_data.get('credit_score', '-')}\n"
+            f"📊 Jumlah Rekod Jualan: {len(sales)}\n"
+            f"📊 Jumlah Rekod Perbelanjaan: {len(expenses)}\n"
+            f"✅ Persetujuan: {user_data.get('consent_date', '-')}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🗑️ Taip *RESET* untuk padam semua data awak\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            "🔒 *DATA STORED ABOUT YOU*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 Name: {user_data.get('owner_name', '-')}\n"
+            f"🏪 Business: {user_data.get('business_name', '-')}\n"
+            f"📦 Product: {user_data.get('product', '-')}\n"
+            f"💵 Income: {user_data.get('monthly_revenue', '-')}\n"
+            f"⏱️ Years Operating: {user_data.get('biz_age', '-')}\n"
+            f"🏦 Bank Account: {user_data.get('has_bank_account', '-')}\n"
+            f"📝 SSM: {user_data.get('has_ssm', '-')}\n"
+            f"⭐ Credit Score: {user_data.get('credit_score', '-')}\n"
+            f"📊 Sales Records: {len(sales)}\n"
+            f"📊 Expense Records: {len(expenses)}\n"
+            f"✅ Consent Given: {user_data.get('consent_date', '-')}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🗑️ Type *RESET* to delete all your data\n"
+            "Type *MENU* to go back"
+        )
+
+# ─────────────────────────────────────
+# CREDIT SCORE — DETERMINISTIC FORMULA
+# ─────────────────────────────────────
+def calculate_credit_score(user_data):
+    """
+    Hybrid AI Credit Scoring: Deterministic formula for the number,
+    AI (Gemini) only for human-readable explanation.
+    
+    Breakdown (100 points total):
+    - Transaction Consistency: 25 pts (how regularly they record sales)
+    - Revenue Strength:       20 pts (total sales vs stated income)
+    - Business Age:           15 pts (years in operation)
+    - Formalization:          20 pts (SSM + bank account)
+    - Record Volume:          10 pts (number of transactions)
+    - Expense Discipline:     10 pts (tracking expenses shows maturity)
+    """
+    sales = user_data.get("sales", [])
+    expenses = user_data.get("expenses", [])
+    total_sales = sum(s.get("amount", 0) for s in sales)
+    count = len(sales)
+
+    breakdown = {}
+
+    # 1. TRANSACTION CONSISTENCY (25 pts)
+    # How many unique days have sales out of total days since first sale
+    consistency_score = 0
+    if count > 0:
+        dates = sorted(set(s.get("date", "") for s in sales if s.get("date")))
+        if len(dates) >= 2:
+            from datetime import date
+            try:
+                first = date.fromisoformat(dates[0])
+                last = date.fromisoformat(dates[-1])
+                total_days = max((last - first).days, 1)
+                unique_days = len(dates)
+                ratio = min(unique_days / total_days, 1.0)
+                consistency_score = round(ratio * 25)
+            except:
+                consistency_score = min(count, 5) * 2  # fallback
+        else:
+            consistency_score = 5  # at least 1 sale recorded
+    breakdown["consistency"] = min(consistency_score, 25)
+
+    # 2. REVENUE STRENGTH (20 pts)
+    # Compare total recorded sales to stated monthly income
+    revenue_score = 0
+    monthly_rev_str = user_data.get("monthly_revenue", "0")
+    try:
+        monthly_rev = int(''.join(filter(str.isdigit, str(monthly_rev_str))))
+    except:
+        monthly_rev = 0
+
+    if monthly_rev > 0 and total_sales > 0:
+        ratio = total_sales / monthly_rev
+        if ratio >= 3:
+            revenue_score = 20
+        elif ratio >= 2:
+            revenue_score = 16
+        elif ratio >= 1:
+            revenue_score = 12
+        elif ratio >= 0.5:
+            revenue_score = 8
+        else:
+            revenue_score = 4
+    elif total_sales > 0:
+        revenue_score = 6
+    breakdown["revenue"] = min(revenue_score, 20)
+
+    # 3. BUSINESS AGE (15 pts)
+    age_score = 0
+    biz_age = user_data.get("biz_age", "").lower()
+    try:
+        age_num = int(''.join(filter(str.isdigit, biz_age)))
+        if "year" in biz_age or "tahun" in biz_age:
+            if age_num >= 5:
+                age_score = 15
+            elif age_num >= 3:
+                age_score = 12
+            elif age_num >= 1:
+                age_score = 9
+            else:
+                age_score = 5
+        elif "month" in biz_age or "bulan" in biz_age:
+            if age_num >= 12:
+                age_score = 9
+            elif age_num >= 6:
+                age_score = 6
+            else:
+                age_score = 3
+        else:
+            # Assume years if just a number
+            if age_num >= 3:
+                age_score = 12
+            elif age_num >= 1:
+                age_score = 9
+            else:
+                age_score = 4
+    except:
+        age_score = 2
+    breakdown["age"] = min(age_score, 15)
+
+    # 4. FORMALIZATION (20 pts)
+    # SSM registration: 10 pts, Bank account: 10 pts
+    formal_score = 0
+    has_ssm = user_data.get("has_ssm", "").lower()
+    has_bank = user_data.get("has_bank_account", "").lower()
+
+    if has_ssm.startswith("y") or has_ssm.startswith("s"):  # ya/yes/sudah
+        formal_score += 10
+    elif has_ssm.startswith("t") or has_ssm.startswith("n"):  # tidak/no
+        formal_score += 0
+    else:
+        formal_score += 2  # unknown
+
+    if has_bank.startswith("y") or has_bank.startswith("a"):  # ya/yes/ada
+        formal_score += 10
+    elif has_bank.startswith("t") or has_bank.startswith("n"):  # tidak/no
+        formal_score += 0
+    else:
+        formal_score += 2  # unknown
+    breakdown["formalization"] = min(formal_score, 20)
+
+    # 5. RECORD VOLUME (10 pts)
+    if count >= 30:
+        vol_score = 10
+    elif count >= 20:
+        vol_score = 8
+    elif count >= 10:
+        vol_score = 6
+    elif count >= 5:
+        vol_score = 4
+    elif count >= 1:
+        vol_score = 2
+    else:
+        vol_score = 0
+    breakdown["volume"] = vol_score
+
+    # 6. EXPENSE DISCIPLINE (10 pts)
+    exp_count = len(expenses)
+    if exp_count >= 10:
+        exp_score = 10
+    elif exp_count >= 5:
+        exp_score = 7
+    elif exp_count >= 2:
+        exp_score = 4
+    elif exp_count >= 1:
+        exp_score = 2
+    else:
+        exp_score = 0
+    breakdown["expenses"] = exp_score
+
+    # TOTAL
+    total_score = sum(breakdown.values())
+    total_score = max(0, min(total_score, 100))
+
+    # LEVEL
+    if total_score >= 80:
+        level = "Cemerlang"
+        level_en = "Excellent"
+    elif total_score >= 60:
+        level = "Baik"
+        level_en = "Good"
+    elif total_score >= 40:
+        level = "Sederhana"
+        level_en = "Moderate"
+    else:
+        level = "Rendah"
+        level_en = "Low"
+
+    return total_score, level, level_en, breakdown
+
+
 def generate_credit_score(phone, user_ref):
     user_data = user_ref.get().to_dict()
     sales = user_data.get("sales", [])
@@ -585,42 +850,88 @@ def generate_credit_score(phone, user_ref):
     count = len(sales)
     lang = user_data.get("language", "bm")
 
+    # STEP 1: Calculate deterministic score
+    score_num, level_bm, level_en, breakdown = calculate_credit_score(user_data)
+
+    # Save to Firebase
+    user_ref.update({
+        "credit_score": score_num,
+        "score_date": str(datetime.now().date()),
+        "score_breakdown": breakdown
+    })
+
+    # STEP 2: Use AI only for explanation and improvement tips
     lang_instruction = "Bahasa Malaysia" if lang == "bm" else "English"
     prompt = f"""
-    Generate a credit readiness score in {lang_instruction} for this entrepreneur:
-    - Name: {user_data.get('owner_name')}
-    - Business: {user_data.get('business_name')}
-    - Product: {user_data.get('product')}
-    - Reported income: {user_data.get('monthly_revenue')}
-    - Total recorded sales: RM{total}
-    - Number of transactions: {count}
-    - Years in operation: {user_data.get('biz_age', 'Unknown')}
-    - Has business bank account: {user_data.get('has_bank_account', 'Unknown')}
-    - SSM registered: {user_data.get('has_ssm', 'Unknown')}
+You are a credit advisor for small businesses. The credit score has ALREADY been calculated.
+DO NOT change the score. Just explain it and give improvement tips.
 
-    Use EXACTLY this format, nothing else:
-    SKOR: [number 0-100]
-    TAHAP: [Rendah/Sederhana/Baik/Cemerlang]
-    SEBAB: [1 sentence]
-    LANGKAH 1: [improvement step]
-    LANGKAH 2: [improvement step]
-    LANGKAH 3: [improvement step]
-    """
+Respond in {lang_instruction}.
+
+SCORE: {score_num}/100
+LEVEL: {level_bm if lang == "bm" else level_en}
+
+Score breakdown:
+- Transaction Consistency: {breakdown['consistency']}/25
+- Revenue Strength: {breakdown['revenue']}/20
+- Business Age: {breakdown['age']}/15
+- Formalization (SSM + Bank): {breakdown['formalization']}/20
+- Record Volume: {breakdown['volume']}/10
+- Expense Discipline: {breakdown['expenses']}/10
+
+Business info:
+- Name: {user_data.get('owner_name')}
+- Business: {user_data.get('business_name')}
+- Product: {user_data.get('product')}
+- Reported income: {user_data.get('monthly_revenue')}
+- Total sales recorded: RM{total}
+- Transactions: {count}
+
+Use EXACTLY this format:
+SKOR: {score_num}/100
+TAHAP: {level_bm if lang == "bm" else level_en}
+
+📊 PECAHAN SKOR:
+• Konsistensi Jualan: {breakdown['consistency']}/25
+• Kekuatan Hasil: {breakdown['revenue']}/20
+• Umur Perniagaan: {breakdown['age']}/15
+• Formalisasi: {breakdown['formalization']}/20
+• Jumlah Rekod: {breakdown['volume']}/10
+• Disiplin Perbelanjaan: {breakdown['expenses']}/10
+
+SEBAB: [1 sentence explaining the overall score]
+
+LANGKAH PENAMBAHBAIKAN:
+LANGKAH 1: [specific improvement based on lowest scoring area]
+LANGKAH 2: [second improvement]
+LANGKAH 3: [third improvement]
+"""
     response = client.models.generate_content(model=MODEL, contents=prompt)
 
-    # Save score to Firebase
-    score_text = response.text
-    try:
-        score_line = [l for l in score_text.split('\n') if l.startswith('SKOR:')][0]
-        score_num = int(''.join(filter(str.isdigit, score_line)))
-        user_ref.update({"credit_score": score_num, "score_date": str(datetime.now().date())})
-    except:
-        pass
-
     if lang == "bm":
-        send_message(phone, f"📊 *Laporan Skor Kredit Awak*\n\n{response.text}\n\n💡 Rekod lebih banyak jualan untuk tingkatkan skor!\nTaip *SIJIL* untuk jana sijil kredit awak\nTaip *MENU* untuk kembali")
+        send_message(phone,
+            f"📊 *Laporan Skor Kredit Awak*\n\n"
+            f"{response.text}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔬 _Skor dikira menggunakan formula hibrid AI_\n"
+            f"_berdasarkan 6 kriteria yang telus dan boleh diaudit._\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"💡 Rekod lebih banyak jualan untuk tingkatkan skor!\n"
+            f"Taip *SIJIL* untuk jana sijil kredit awak\n"
+            f"Taip *MENU* untuk kembali"
+        )
     else:
-        send_message(phone, f"📊 *Your Credit Score Report*\n\n{response.text}\n\n💡 Record more sales to improve your score!\nType *CERTIFICATE* to generate your credit certificate\nType *MENU* to go back")
+        send_message(phone,
+            f"📊 *Your Credit Score Report*\n\n"
+            f"{response.text}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔬 _Score calculated using hybrid AI formula_\n"
+            f"_based on 6 transparent, auditable criteria._\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"💡 Record more sales to improve your score!\n"
+            f"Type *CERTIFICATE* to generate your credit certificate\n"
+            f"Type *MENU* to go back"
+        )
 
 # ─────────────────────────────────────
 # SALES SUMMARY
