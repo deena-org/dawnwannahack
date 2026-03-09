@@ -1000,14 +1000,15 @@ function loadMobileView(user) {
   document.getElementById('user-biz').textContent = user.business_name || '—';
 
   // Stats — animated counters
-  if (total > 0) animateCount('stat-revenue', 0, total, 1000, 'RM', '');
-  else document.getElementById('stat-revenue').textContent = 'RM0';
+  const cur = getCur(user);
+  if (total > 0) animateCount('stat-revenue', 0, total, 1000, cur, '');
+  else document.getElementById('stat-revenue').textContent = cur + '0';
   if (count > 0) animateCount('stat-txn', 0, count, 800, '', '');
   else document.getElementById('stat-txn').textContent = '0';
-  if (avg > 0) animateCount('stat-avg', 0, avg, 900, 'RM', '');
-  else document.getElementById('stat-avg').textContent = 'RM0';
-  if (best > 0) animateCount('stat-best', 0, best, 1000, 'RM', '');
-  else document.getElementById('stat-best').textContent = 'RM0';
+  if (avg > 0) animateCount('stat-avg', 0, avg, 900, cur, '');
+  else document.getElementById('stat-avg').textContent = cur + '0';
+  if (best > 0) animateCount('stat-best', 0, best, 1000, cur, '');
+  else document.getElementById('stat-best').textContent = cur + '0';
 
   // Chart
   buildSalesChart(sales);
@@ -1099,19 +1100,20 @@ function buildSalesChart(sales, period) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 10 }, maxRotation:45, autoSkip:true, maxTicksLimit:10 } },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => 'RM'+v } }
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => getCur(currentUser)+v } }
       }
     }
   });
 }
 
 function buildRoadmap(user, sales) {
+  const reg = getReg(user);
   const items = [
     { done: !!(user.owner_name), label: t('profile_created'), desc: t('profile_desc') },
     { done: sales.length > 0, label: t('first_sale'), desc: t('first_sale_desc') },
     { done: sales.length >= 10, label: t('ten_txn'), desc: `${sales.length}/10 ${t('transactions').toLowerCase()}` },
     { done: !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y')), label: t('bank_account'), desc: t('bank_desc') },
-    { done: !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y')), label: t('ssm_reg'), desc: t('ssm_desc') },
+    { done: !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y')), label: reg + ' ' + t('biz_registration'), desc: t('ssm_desc') },
     { done: (user.credit_score||0) >= 60, label: t('score_60'), desc: `${t('credit_score_label')}: ${user.credit_score || '—'}` },
   ];
 
@@ -1177,6 +1179,16 @@ function buildCertificate(user, score) {
 // ══════════════════════════════════════════════
 let currentLang = localStorage.getItem('nc-lang') || 'en';
 
+// ASEAN Country Config — matches app.py COUNTRY_CONFIG
+const COUNTRY_CONFIG = {
+  MY: { currency: 'RM', registration: 'SSM', loan: 'TEKUN', flag: '🇲🇾', name: 'Malaysia' },
+  ID: { currency: 'Rp', registration: 'NIB', loan: 'KUR', flag: '🇮🇩', name: 'Indonesia' },
+  PH: { currency: '₱', registration: 'DTI', loan: 'SB Corp', flag: '🇵🇭', name: 'Philippines' },
+};
+function getUserCountry(user) { return COUNTRY_CONFIG[user?.country || 'MY'] || COUNTRY_CONFIG.MY; }
+function getCur(user) { return getUserCountry(user).currency; }
+function getReg(user) { return getUserCountry(user).registration; }
+
 const translations = {
   en: {
     credit_readiness: 'Credit Readiness Score',
@@ -1231,8 +1243,9 @@ const translations = {
     rev_volume: 'Revenue Volume',
     biz_registration: 'Business Registration',
     bank_linked: 'Bank Account Linked',
-    txn_frequency: 'Transaction Frequency',
+    txn_frequency: 'Record Volume',
     biz_age: 'Business Age',
+    expense_discipline: 'Expense Discipline',
     empty_title: "Let's get started!",
     empty_desc: 'Log your first sale via WhatsApp to see your dashboard come alive. Every transaction builds your credit history.',
     empty_cta: 'Log First Sale via WhatsApp',
@@ -1296,8 +1309,9 @@ const translations = {
     rev_volume: 'Jumlah Pendapatan',
     biz_registration: 'Pendaftaran Perniagaan',
     bank_linked: 'Akaun Bank Disambung',
-    txn_frequency: 'Kekerapan Transaksi',
+    txn_frequency: 'Jumlah Rekod',
     biz_age: 'Usia Perniagaan',
+    expense_discipline: 'Disiplin Perbelanjaan',
     empty_title: 'Jom mula!',
     empty_desc: 'Rekod jualan pertama anda melalui WhatsApp untuk melihat papan pemuka anda. Setiap transaksi membina sejarah kredit anda.',
     empty_cta: 'Rekod Jualan Pertama via WhatsApp',
@@ -1333,9 +1347,16 @@ window.toggleLang = () => {
   currentLang = currentLang === 'en' ? 'bm' : 'en';
   localStorage.setItem('nc-lang', currentLang);
   applyTranslations();
+  // Update drawer language button label
+  const langLabel = document.getElementById('drawer-lang-label');
+  if (langLabel) langLabel.textContent = currentLang === 'en' ? 'Bahasa Melayu' : 'English';
   // Re-render dynamic content if user is loaded
   if (currentUser) {
     loadMobileView(currentUser);
+  }
+  // Re-render bank view if visible
+  if (allUsers.length > 0 && document.getElementById('desktop-view').style.display !== 'none') {
+    renderBankView(allUsers);
   }
 };
 
@@ -1359,67 +1380,68 @@ function buildScoreBreakdown(user, sales) {
   }
   card.style.display = 'block';
 
-  const count = sales.length;
+  const bd = user.score_breakdown || {};
+  const reg = getReg(user);
+  const cur = getCur(user);
   const total = sales.reduce((s,x) => s + (x.amount||0), 0);
-  const hasSSM = !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y'));
-  const hasBank = !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y'));
 
-  // Calculate factor scores (these simulate the AI scoring weights)
+  // Use REAL breakdown from Firebase (matches app.py calculate_credit_score)
   const factors = [
     {
-      icon: '📊', key: 'txn_consistency', weight: 25,
-      value: Math.min(100, count >= 10 ? 90 + Math.min(10, (count-10)*0.5) : count * 9),
+      icon: '📊', key: 'txn_consistency', max: 25,
+      value: bd.consistency || 0,
       color: '#00d4aa',
-      sub: count >= 10 ? count + ' transactions ✓' : count + '/10 ' + t('transactions').toLowerCase()
+      sub: sales.length + ' ' + t('transactions').toLowerCase()
     },
     {
-      icon: '💰', key: 'rev_volume', weight: 20,
-      value: Math.min(100, total >= 5000 ? 85 + Math.min(15, (total-5000)/1000) : (total/5000)*85),
+      icon: '💰', key: 'rev_volume', max: 20,
+      value: bd.revenue || 0,
       color: '#6c63ff',
-      sub: 'RM' + total.toLocaleString()
+      sub: cur + total.toLocaleString()
     },
     {
-      icon: '📋', key: 'biz_registration', weight: 15,
-      value: hasSSM ? 100 : 0,
-      color: '#ffd166',
-      sub: hasSSM ? 'SSM ✓' : 'SSM pending'
-    },
-    {
-      icon: '🏦', key: 'bank_linked', weight: 15,
-      value: hasBank ? 100 : 0,
-      color: '#06d6a0',
-      sub: hasBank ? t('bank_account') + ' ✓' : 'Not linked'
-    },
-    {
-      icon: '🔄', key: 'txn_frequency', weight: 15,
-      value: Math.min(100, count >= 5 ? 70 + Math.min(30, (count-5)*3) : count * 14),
-      color: '#ff9f43',
-      sub: count > 0 ? (count/7).toFixed(1) + '/day avg' : '—'
-    },
-    {
-      icon: '📅', key: 'biz_age', weight: 10,
-      value: score > 0 ? Math.min(100, 60 + Math.random()*30) : 0,
+      icon: '📅', key: 'biz_age', max: 15,
+      value: bd.age || 0,
       color: '#a29bfe',
-      sub: user.score_date ? 'Since ' + user.score_date : 'Active'
+      sub: user.biz_age || '—'
+    },
+    {
+      icon: '📋', key: 'biz_registration', max: 20,
+      value: bd.formalization || 0,
+      color: '#ffd166',
+      sub: (bd.formalization >= 15 ? reg + ' ✓ + ' + t('bank_account') : bd.formalization >= 10 ? (reg + ' or ' + t('bank_account')) : 'Pending')
+    },
+    {
+      icon: '🔢', key: 'txn_frequency', max: 10,
+      value: bd.volume || 0,
+      color: '#ff9f43',
+      sub: sales.length + ' records'
+    },
+    {
+      icon: '💸', key: 'expense_discipline', max: 10,
+      value: bd.expenses || 0,
+      color: '#06d6a0',
+      sub: (user.expenses || []).length + ' expenses tracked'
     },
   ];
 
-  container.innerHTML = factors.map(f => `
+  container.innerHTML = factors.map(f => {
+    const pct = f.max > 0 ? Math.round((f.value / f.max) * 100) : 0;
+    return `
     <div class="breakdown-row">
       <div class="breakdown-icon">${f.icon}</div>
       <div class="breakdown-info">
         <div class="breakdown-label">${t(f.key)}</div>
         <div class="breakdown-sublabel">${f.sub}</div>
         <div class="breakdown-bar-bg">
-          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${Math.round(f.value)}"></div>
+          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${pct}"></div>
         </div>
       </div>
       <div style="text-align:right;">
-        <div class="breakdown-value" style="color:${f.color};">${Math.round(f.value * f.weight / 100)}</div>
-        <div class="breakdown-weight">${f.weight}%</div>
+        <div class="breakdown-value" style="color:${f.color};">${f.value}/${f.max}</div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 
   // Animate bars
   setTimeout(() => {
@@ -1452,7 +1474,7 @@ window.openPrequalModal = () => {
   const verifiedPct = sales.length > 0 ? Math.round((verified/sales.length)*100) : 0;
 
   document.getElementById('pq-score').textContent = score + '/100';
-  document.getElementById('pq-revenue').textContent = 'RM' + total.toLocaleString();
+  document.getElementById('pq-revenue').textContent = getCur(currentUser) + total.toLocaleString();
   document.getElementById('pq-txn').textContent = sales.length;
   document.getElementById('pq-verified').textContent = verifiedPct + '%';
 
@@ -1533,14 +1555,14 @@ function buildGrowthTrends(sales) {
   const tAvg = document.getElementById('trend-avg');
   const tBest = document.getElementById('trend-best');
 
-  if (tRev) tRev.innerHTML = trendHTML(thisRev, lastRev, 'RM');
+  if (tRev) tRev.innerHTML = trendHTML(thisRev, lastRev, getCur(currentUser));
   if (tTxn) tTxn.innerHTML = trendHTML(thisTxn, lastTxn, '');
-  if (tAvg) tAvg.innerHTML = trendHTML(thisAvg, lastAvg, 'RM');
+  if (tAvg) tAvg.innerHTML = trendHTML(thisAvg, lastAvg, getCur(currentUser));
   // Best sale doesn't have a weekly trend, show total instead
   if (tBest && sales.length > 0) {
     const thisBest = thisWeekSales.length > 0 ? Math.max(...thisWeekSales.map(s=>s.amount||0)) : 0;
     const lastBest = lastWeekSales.length > 0 ? Math.max(...lastWeekSales.map(s=>s.amount||0)) : 0;
-    tBest.innerHTML = trendHTML(thisBest, lastBest, 'RM');
+    tBest.innerHTML = trendHTML(thisBest, lastBest, getCur(currentUser));
   }
 }
 
@@ -1598,7 +1620,7 @@ function renderBankView(users) {
   document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + '% of portfolio' : '—';
   if (avgScore) animateCount('d-avg-score', 0, avgScore, 1000, '', '');
   else document.getElementById('d-avg-score').textContent = '—';
-  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', '');
+  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', ''); // Bank view always shows RM as aggregate
 
   // Table
   const tbody = document.getElementById('msme-table-body');
@@ -1622,7 +1644,7 @@ function renderBankView(users) {
         <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${color};">${initial}</div><strong>${u.owner_name||'—'}</strong></div></td>
         <td>${u.business_name||'—'}</td>
         <td>${u.product||'—'}</td>
-        <td>RM${uRev.toLocaleString()}</td>
+        <td>${getCur(u)}${uRev.toLocaleString()}</td>
         <td><span class="score-pill ${scoreCls}">${score||'N/A'}</span></td>
         <td><span class="status-pill ${statusCls}">${statusTxt}</span></td>
       </tr>`;
@@ -1760,14 +1782,15 @@ window.openModal = (phone) => {
   document.getElementById('modal-product').textContent = u.product || '—';
   document.getElementById('modal-score').textContent = score || 'N/A';
   document.getElementById('modal-score').style.color = statusColor;
-  document.getElementById('modal-rev').textContent = 'RM' + rev.toLocaleString();
+  document.getElementById('modal-rev').textContent = getCur(u) + rev.toLocaleString();
   document.getElementById('modal-txn').textContent = sales.length;
   document.getElementById('modal-status').textContent = statusTxt;
   document.getElementById('modal-status').style.color = statusColor;
 
+  const modalCur = getCur(u);
   const recent = [...sales].reverse().slice(0, 5);
   document.getElementById('modal-sales').innerHTML = recent.length > 0
-    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">RM${(s.amount||0).toLocaleString()}</span></div>`).join('')
+    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">${modalCur}${(s.amount||0).toLocaleString()}</span></div>`).join('')
     : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;">No sales recorded yet</div>';
 
   document.getElementById('modal-phone-row').textContent = `📱 WhatsApp: +${u.phone}`;
@@ -1846,7 +1869,7 @@ window.exportPDF = () => {
       <td style="padding:8px 12px;">${u.owner_name||'—'}</td>
       <td style="padding:8px 12px;">${u.business_name||'—'}</td>
       <td style="padding:8px 12px;">${u.product||'—'}</td>
-      <td style="padding:8px 12px;">RM${rev.toLocaleString()}</td>
+      <td style="padding:8px 12px;">${getCur(u)}${rev.toLocaleString()}</td>
       <td style="padding:8px 12px;font-weight:700;color:${score>=70?'#00a67e':score>=50?'#e6a817':'#e55353'}">${score||'N/A'}</td>
       <td style="padding:8px 12px;">${status}</td>
     </tr>`;
