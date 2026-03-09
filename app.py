@@ -239,6 +239,24 @@ def handle_text(phone, text):
         show_loan_referral(phone, user_ref)
         return
 
+    # KEMASKINI/UPDATE command — re-answer credit questions
+    if text_upper in ["KEMASKINI", "UPDATE"]:
+        user_ref.update({"state": "credit_q1"})
+        cc_temp = get_country(user_data)
+        if lang == "bm":
+            send_message(phone,
+                "🔄 *Kemaskini Maklumat Kredit*\n\n"
+                "Soalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n"
+                "_(Contoh: 3 bulan, 1 tahun, 5 tahun)_"
+            )
+        else:
+            send_message(phone,
+                "🔄 *Update Credit Info*\n\n"
+                "Question 1️⃣: How long has your business been operating?\n"
+                "_(Example: 3 months, 1 year, 5 years)_"
+            )
+        return
+
     # Onboarding states
     if state == "ask_consent":
         if text_upper in ["SETUJU", "AGREE", "YES", "YA", "OK"]:
@@ -337,7 +355,7 @@ def handle_text(phone, text):
         owner_name = user_data.get("owner_name", "")
         business_name = user_data.get("business_name", "")
         product = user_data.get("product", "")
-        user_ref.update({"monthly_revenue": text, "state": "menu"})
+        user_ref.update({"monthly_revenue": text, "state": "menu", "registered_date": str(datetime.now().date())})
         if lang == "bm":
             send_message(phone,
                 f"🎉 *Profil perniagaan awak dah siap, {owner_name}!*\n\n"
@@ -401,7 +419,7 @@ def handle_text(phone, text):
                 )
         else:
             # Route menu numbers directly, smart_handle for natural language
-            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER"]:
+            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER","KEMASKINI","UPDATE"]:
                 handle_menu(phone, text, user_ref)
             else:
                 smart_handle(phone, text, user_ref)
@@ -475,6 +493,14 @@ def smart_handle(phone, text, user_ref):
         return
     if text_upper in ["RUJUK", "REFER"]:
         show_loan_referral(phone, user_ref)
+        return
+    if text_upper in ["KEMASKINI", "UPDATE"]:
+        user_ref.update({"state": "credit_q1"})
+        cc_temp = get_country(user_data)
+        if lang == "bm":
+            send_message(phone, "🔄 *Kemaskini Maklumat Kredit*\n\nSoalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n_(Contoh: 3 bulan, 1 tahun, 5 tahun)_")
+        else:
+            send_message(phone, "🔄 *Update Credit Info*\n\nQuestion 1️⃣: How long has your business been operating?\n_(Example: 3 months, 1 year, 5 years)_")
         return
     if text_upper == "RESET":
         user_ref.delete()
@@ -655,11 +681,34 @@ def handle_menu(phone, text, user_ref):
         else:
             send_message(phone, f"💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: {cc['sale_example_en']})_")
     elif t_upper == "2":
-        user_ref.update({"state": "credit_q1"})
-        if lang == "bm":
-            send_message(phone, "📊 *Jana Skor Kredit*\n\nSaya perlu tanya 3 soalan tambahan untuk skor yang lebih tepat.\n\nSoalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n_(Contoh: 3 bulan, 1 tahun, 5 tahun)_")
+        # Check if user already answered the 3 credit questions before
+        check_data = user_ref.get().to_dict()
+        has_answers = check_data.get("biz_age") and check_data.get("has_bank_account") and check_data.get("has_ssm")
+        if has_answers:
+            # Skip questions, generate score directly with updated data
+            if lang == "bm":
+                send_message(phone,
+                    "📊 *Mengemas kini skor kredit awak...*\n\n"
+                    f"🏦 Akaun bank: {check_data.get('has_bank_account')}\n"
+                    f"📝 {cc['registration']}: {check_data.get('has_ssm')}\n\n"
+                    "⏳ Mengira skor berdasarkan data terkini...\n\n"
+                    "💡 _Taip KEMASKINI untuk ubah maklumat_"
+                )
+            else:
+                send_message(phone,
+                    "📊 *Updating your credit score...*\n\n"
+                    f"🏦 Bank account: {check_data.get('has_bank_account')}\n"
+                    f"📝 {cc['registration']}: {check_data.get('has_ssm')}\n\n"
+                    "⏳ Calculating score based on latest data...\n\n"
+                    "💡 _Type UPDATE to change your info_"
+                )
+            generate_credit_score(phone, user_ref)
         else:
-            send_message(phone, "📊 *Generate Credit Score*\n\nI need to ask 3 additional questions for a more accurate score.\n\nQuestion 1️⃣: How long has your business been operating?\n_(Example: 3 months, 1 year, 5 years)_")
+            user_ref.update({"state": "credit_q1"})
+            if lang == "bm":
+                send_message(phone, "📊 *Jana Skor Kredit*\n\nSaya perlu tanya 3 soalan tambahan untuk skor yang lebih tepat.\n\nSoalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n_(Contoh: 3 bulan, 1 tahun, 5 tahun)_")
+            else:
+                send_message(phone, "📊 *Generate Credit Score*\n\nI need to ask 3 additional questions for a more accurate score.\n\nQuestion 1️⃣: How long has your business been operating?\n_(Example: 3 months, 1 year, 5 years)_")
     elif t_upper == "3":
         user_ref.update({"state": "ai_chat"})
         if lang == "bm":
@@ -890,36 +939,51 @@ def calculate_credit_score(user_data):
     breakdown["revenue"] = min(revenue_score, 20)
 
     # 3. BUSINESS AGE (15 pts)
+    # Auto-calculate: original biz_age answer + time since registration
     age_score = 0
     biz_age = user_data.get("biz_age", "").lower()
+    
+    # Calculate total months in business
+    total_months = 0
+    
+    # Parse original answer for starting age
     try:
         age_num = int(''.join(filter(str.isdigit, biz_age)))
         if "year" in biz_age or "tahun" in biz_age:
-            if age_num >= 5:
-                age_score = 15
-            elif age_num >= 3:
-                age_score = 12
-            elif age_num >= 1:
-                age_score = 9
-            else:
-                age_score = 5
+            total_months = age_num * 12
         elif "month" in biz_age or "bulan" in biz_age:
-            if age_num >= 12:
-                age_score = 9
-            elif age_num >= 6:
-                age_score = 6
-            else:
-                age_score = 3
+            total_months = age_num
         else:
-            # Assume years if just a number
-            if age_num >= 3:
-                age_score = 12
-            elif age_num >= 1:
-                age_score = 9
-            else:
-                age_score = 4
+            total_months = age_num * 12  # assume years
     except:
+        total_months = 0
+
+    # Add months since registration on BizBuddy
+    reg_date_str = user_data.get("registered_date", "")
+    if reg_date_str:
+        try:
+            from datetime import date
+            reg_date = date.fromisoformat(reg_date_str)
+            months_on_platform = max((date.today() - reg_date).days // 30, 0)
+            total_months += months_on_platform
+        except:
+            pass
+
+    # Score based on total months
+    if total_months >= 60:       # 5+ years
+        age_score = 15
+    elif total_months >= 36:     # 3+ years
+        age_score = 12
+    elif total_months >= 12:     # 1+ year
+        age_score = 9
+    elif total_months >= 6:      # 6+ months
+        age_score = 6
+    elif total_months >= 3:      # 3+ months
+        age_score = 4
+    elif total_months > 0:
         age_score = 2
+    else:
+        age_score = 1
     breakdown["age"] = min(age_score, 15)
 
     # 4. FORMALIZATION (20 pts)
