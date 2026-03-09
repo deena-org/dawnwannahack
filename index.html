@@ -11,7 +11,6 @@
 <title>BizBuddy</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -162,7 +161,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 .desk-stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;border-left-width:3px;position:relative;overflow:hidden;transition:transform 0.2s;}
 .desk-stat:hover{transform:translateY(-2px);}
 .desk-stat-icon{font-size:22px;margin-bottom:10px;}
-.desk-stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;}
+.desk-stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .desk-stat-label{font-size:12px;color:var(--muted);}
 .desk-stat-trend{font-size:11px;color:var(--green);margin-top:6px;}
 
@@ -250,7 +249,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 
 .logout-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
 .logout-btn:hover{color:var(--warn);border-color:var(--warn);}
-/* MALAYSIA MAP */
+/* ASEAN MAP */
 .map-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:24px;}
 .map-card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
 .map-tooltip{position:absolute;background:rgba(13,17,23,0.95);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:999;display:none;min-width:160px;}
@@ -548,7 +547,6 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
       <div class="cert-stars" id="cert-stars">—</div>
       <div class="cert-status" id="cert-status">Generate credit score via WhatsApp to see certificate</div>
       <div class="cert-id" id="cert-id">NC-XXXX-XXXXXXXX</div>
-      <button class="cert-download-btn" onclick="downloadCertificate()" data-i18n="save_cert">📥 Save Certificate as Image</button>
     </div>
   </div>
 
@@ -580,7 +578,13 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         <div class="desk-stat-trend" data-i18n="portfolio_avg">Portfolio average</div>
       </div>
       <div class="desk-stat" style="border-left-color:#00d4aa;">
-        <div class="desk-stat-icon">💰</div>
+        <div class="desk-stat-icon" style="display:flex;align-items:center;justify-content:space-between;">💰
+          <div id="rev-currency-toggle" style="display:flex;gap:4px;">
+            <button onclick="setRevCurrency('RM')" class="rev-cur-btn rev-cur-active" data-cur="RM" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--accent);color:#000;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">RM</button>
+            <button onclick="setRevCurrency('Rp')" class="rev-cur-btn" data-cur="Rp" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Rp</button>
+            <button onclick="setRevCurrency('₱')" class="rev-cur-btn" data-cur="₱" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">₱</button>
+          </div>
+        </div>
         <div class="desk-stat-val" id="d-total-rev">RM—</div>
         <div class="desk-stat-label" data-i18n="total_tracked_rev">Total Tracked Revenue</div>
         <div class="desk-stat-trend" data-i18n="verified_txn">Verified transactions</div>
@@ -605,6 +609,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
               <tr>
                 <th data-i18n="th_name">Name</th>
                 <th data-i18n="th_business">Business</th>
+                <th data-i18n="th_country">Country</th>
                 <th data-i18n="th_product">Product</th>
                 <th data-i18n="th_revenue">Revenue</th>
                 <th data-i18n="th_score">Score</th>
@@ -639,9 +644,9 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         <div id="loan-pipeline"></div>
       </div>
     </div>
-    <!-- MALAYSIA MAP -->
+    <!-- ASEAN MAP -->
     <div class="map-card fade-up fade-up-4">
-      <h3>🗺️ <span data-i18n="msme_map">MSME Distribution Map — Malaysia</span></h3>
+      <h3>🗺️ <span data-i18n="msme_map">MSME Distribution Map — ASEAN</span></h3>
       <div style="position:relative;">
         <canvas id="malaysia-map" height="320" style="width:100%;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;"></canvas>
         <div class="map-tooltip" id="map-tooltip"></div>
@@ -1266,6 +1271,7 @@ const translations = {
     all_status: 'All Status',
     th_name: 'Name',
     th_business: 'Business',
+    th_country: 'Country',
     th_product: 'Product',
     th_revenue: 'Revenue',
     th_score: 'Score',
@@ -1274,7 +1280,7 @@ const translations = {
     portfolio_breakdown: 'Portfolio Breakdown',
     revenue_trends: 'Revenue Trends',
     loan_pipeline: 'Loan Pipeline',
-    msme_map: 'MSME Distribution Map — Malaysia',
+    msme_map: 'MSME Distribution Map — ASEAN',
     legend_ready: 'Loan Ready (70+)',
     legend_progress: 'In Progress (50-69)',
     legend_building: 'Building (<50)',
@@ -1357,6 +1363,7 @@ const translations = {
     all_status: 'Semua Status',
     th_name: 'Nama',
     th_business: 'Perniagaan',
+    th_country: 'Negara',
     th_product: 'Produk',
     th_revenue: 'Hasil',
     th_score: 'Skor',
@@ -1365,7 +1372,7 @@ const translations = {
     portfolio_breakdown: 'Pecahan Portfolio',
     revenue_trends: 'Trend Hasil',
     loan_pipeline: 'Saluran Pinjaman',
-    msme_map: 'Peta Taburan MSME — Malaysia',
+    msme_map: 'Peta Taburan MSME — ASEAN',
     legend_ready: 'Layak Pinjaman (70+)',
     legend_progress: 'Dalam Proses (50-69)',
     legend_building: 'Membina (<50)',
@@ -1624,7 +1631,7 @@ async function loadBankView() {
   document.getElementById('user-badge').textContent = currentLang === 'bm' ? 'Portal Bank' : 'Bank Portal';
   // Show loading state
   const tbody = document.getElementById('msme-table-body');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;"><div class="loader-ring" style="margin:0 auto 12px;width:28px;height:28px;border-width:2px;"></div>Loading portfolio data...</td></tr>';
+  if(tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#5a6785;padding:32px;"><div class="loader-ring" style="margin:0 auto 12px;width:28px;height:28px;border-width:2px;"></div>Loading portfolio data...</td></tr>';
   try {
     const snap = await getDocs(collection(db, 'users'));
     allUsers = [];
@@ -1633,78 +1640,71 @@ async function loadBankView() {
     updateLastUpdated();
   } catch(e) {
     console.error(e);
-    if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ff6b6b;padding:32px;">Failed to load data. Please try again.</td></tr>';
+    if(tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ff6b6b;padding:32px;">Failed to load data. Please try again.</td></tr>';
   }
 }
 
-// ── CERTIFICATE DOWNLOAD ──
-window.downloadCertificate = async () => {
-  const certEl = document.getElementById('cert-card-el');
-  if (!certEl || typeof html2canvas === 'undefined') { alert('Could not generate certificate image.'); return; }
-  const btn = certEl.querySelector('.cert-download-btn');
-  const shine = certEl.querySelector('.cert-shine');
-  const origText = btn.textContent;
-  btn.textContent = '⏳ Generating...';
-  btn.classList.add('btn-loading');
 
-  // Temporarily hide button and shine animation for clean capture
-  btn.style.display = 'none';
-  if (shine) shine.style.display = 'none';
-
-  // Temporarily override styles for html2canvas compatibility
-  const origBg = certEl.style.background;
-  const origBorder = certEl.style.border;
-  const isLight = document.body.classList.contains('light-mode');
-  certEl.style.background = isLight ? 'linear-gradient(135deg,#e8f8f5,#ede9ff)' : 'linear-gradient(135deg,#0d2d2a,#1a1535)';
-  certEl.style.border = '2px solid #00d4aa';
-
-  try {
-    const canvas = await html2canvas(certEl, {
-      backgroundColor: isLight ? '#f0f4f8' : '#0d1117',
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      onclone: (clonedDoc) => {
-        // Remove pseudo-elements in cloned version
-        const clonedCert = clonedDoc.getElementById('cert-card-el');
-        if (clonedCert) {
-          clonedCert.style.overflow = 'visible';
-        }
-      }
-    });
-    const link = document.createElement('a');
-    link.download = 'BizBuddy-Certificate.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  } catch(e) { console.error(e); alert('Failed to generate image.'); }
-
-  // Restore original styles
-  certEl.style.background = origBg;
-  certEl.style.border = origBorder;
-  btn.style.display = '';
-  if (shine) shine.style.display = '';
-  btn.textContent = origText;
-  btn.classList.remove('btn-loading');
+// Currency conversion rates (approximate, for display purposes)
+const EXCHANGE_RATES = {
+  RM: { RM: 1, Rp: 3500, '₱': 13 },
+  Rp: { RM: 1/3500, Rp: 1, '₱': 1/270 },
+  '₱': { RM: 1/13, Rp: 270, '₱': 1 },
 };
+let displayCurrency = 'RM';
+
+window.setRevCurrency = (cur) => {
+  displayCurrency = cur;
+  document.querySelectorAll('.rev-cur-btn').forEach(b => {
+    if (b.dataset.cur === cur) {
+      b.style.background = 'var(--accent)';
+      b.style.color = '#000';
+      b.classList.add('rev-cur-active');
+    } else {
+      b.style.background = 'transparent';
+      b.style.color = 'var(--muted)';
+      b.classList.remove('rev-cur-active');
+    }
+  });
+  if (allUsers.length > 0) renderBankView(allUsers);
+};
+
+function convertToDisplayCurrency(amount, fromCurrency) {
+  const from = fromCurrency || 'RM';
+  const rate = EXCHANGE_RATES[from]?.[displayCurrency] || 1;
+  return Math.round(amount * rate);
+}
 
 function renderBankView(users) {
   const total = users.length;
   const loanReady = users.filter(u => (u.credit_score||0) >= 70).length;
   const scores = users.map(u => u.credit_score||0).filter(s => s > 0);
   const avgScore = scores.length > 0 ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
-  const totalRev = users.reduce((s,u) => s + (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0), 0);
+
+  // Convert all revenue to display currency
+  const totalRev = users.reduce((s,u) => {
+    const userCur = getCur(u);
+    const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
+    return s + convertToDisplayCurrency(rev, userCur);
+  }, 0);
 
   animateCount('d-total-msme', 0, total, 800, '', '');
   animateCount('d-loan-ready', 0, loanReady, 900, '', '');
   document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + (currentLang === 'bm' ? '% portfolio' : '% of portfolio') : '—';
   if (avgScore) animateCount('d-avg-score', 0, avgScore, 1000, '', '');
   else document.getElementById('d-avg-score').textContent = '—';
-  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', ''); // Aggregate portfolio in RM
+  // Auto-size font for revenue to prevent overflow
+  const revEl = document.getElementById('d-total-rev');
+  const revStr = displayCurrency + totalRev.toLocaleString();
+  if (revStr.length > 14) revEl.style.fontSize = '18px';
+  else if (revStr.length > 10) revEl.style.fontSize = '22px';
+  else revEl.style.fontSize = '';
+  animateCount('d-total-rev', 0, totalRev, 1000, displayCurrency, '');
 
   // Table
   const tbody = document.getElementById('msme-table-body');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;">' + (currentLang === 'bm' ? 'Tiada MSME berdaftar lagi' : 'No MSMEs registered yet') + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#5a6785;padding:32px;">' + (currentLang === 'bm' ? 'Tiada MSME berdaftar lagi' : 'No MSMEs registered yet') + '</td></tr>';
   } else {
     const avatarColors = ['#00d4aa','#6c63ff','#ff6b6b','#ffd166','#06d6a0','#ff9f43','#a29bfe','#fd79a8','#00b894','#e17055'];
     tbody.innerHTML = users.map((u, idx) => {
@@ -1719,9 +1719,11 @@ function renderBankView(users) {
       const initial = (u.owner_name||'?')[0].toUpperCase();
       const color = avatarColors[idx % avatarColors.length];
       const safeU = encodeURIComponent(JSON.stringify({owner_name:u.owner_name,business_name:u.business_name,product:u.product,credit_score:u.credit_score,phone:u.phone,sales:u.sales}));
+      const cc = getUserCountry(u);
       return `<tr style="cursor:pointer;" onclick="openModal('${u.phone}')" data-name="${(u.owner_name||'').toLowerCase()}" data-biz="${(u.business_name||'').toLowerCase()}" data-status="${statusCls}">
         <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${color};">${initial}</div><strong>${u.owner_name||'—'}</strong></div></td>
         <td>${u.business_name||'—'}</td>
+        <td><span style="font-size:14px;">${cc.flag}</span> ${cc.name}</td>
         <td>${u.product||'—'}</td>
         <td>${getCur(u)}${uRev.toLocaleString()}</td>
         <td><span class="score-pill ${scoreCls}">${score||'N/A'}</span></td>
@@ -1761,7 +1763,7 @@ function renderBankView(users) {
   portfolioChartInstance = new Chart(pCtx, {
     type: 'doughnut',
     data: {
-      labels: [t('loan_ready'), t('in_progress'), t('building'), t('not_scored')],
+      labels: ['Loan Ready', 'In Progress', 'Building', 'Unscored'],
       datasets: [{ data: rCounts, backgroundColor: ['#06d6a0','#ffd166','#ff6b6b','#2a3248'], borderWidth: 0 }]
     },
     options: {
@@ -1942,7 +1944,7 @@ window.exportPDF = () => {
   const rows = users.map(u => {
     const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
     const score = u.credit_score||0;
-    const status = score>=70?t('loan_ready'):score>=50?t('in_progress'):t('building');
+    const status = score>=70?'Loan Ready':score>=50?'In Progress':'Building';
     return `<tr style="border-bottom:1px solid #eee;">
       <td style="padding:8px 12px;">${u.owner_name||'—'}</td>
       <td style="padding:8px 12px;">${u.business_name||'—'}</td>
@@ -1957,12 +1959,12 @@ window.exportPDF = () => {
 </head><body>
 <h1>BizBuddy</h1><div class="subtitle">Portfolio Report — Generated ${date}</div>
 <div class="stats">
-  <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">${t('total_msmes')}</div></div>
-  <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">${t('loan_ready_70')}</div></div>
-  <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">${t('avg_credit_score')}</div></div>
-  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">${t('total_tracked_rev')}</div></div>
+  <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total MSMEs</div></div>
+  <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">Loan Ready (70+)</div></div>
+  <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">Avg Credit Score</div></div>
+  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">Total Revenue Tracked</div></div>
 </div>
-<table><thead><tr><th>${t('th_name')}</th><th>${t('th_business')}</th><th>${t('th_product')}</th><th>${t('th_revenue')}</th><th>${t('th_score')}</th><th>${t('th_status')}</th></tr></thead>
+<table><thead><tr><th>Name</th><th>Business</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="footer">Powered by BizBuddy AI · Confidential Portfolio Report · ${date}</div>
 </body></html>`;
@@ -1971,14 +1973,14 @@ window.exportPDF = () => {
   win.document.close();
   setTimeout(() => win.print(), 500);
 };
-// MALAYSIA MAP — HiDPI SUPPORT
+// ASEAN MAP — HiDPI SUPPORT
 function drawMalaysiaMap(users) {
   const canvas = document.getElementById('malaysia-map');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const displayW = canvas.offsetWidth || 900;
-  const displayH = 320;
+  const displayH = 400;
   canvas.width = displayW * dpr;
   canvas.height = displayH * dpr;
   canvas.style.width = displayW + 'px';
@@ -1986,65 +1988,86 @@ function drawMalaysiaMap(users) {
   ctx.scale(dpr, dpr);
   const W = displayW, H = displayH;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#161b27'; ctx.fillRect(0,0,W,H);
-  const sX=W/900, sY=H/320;
+  const isLight = document.body.classList.contains('light-mode');
+  ctx.fillStyle = isLight ? '#e8edf5' : '#161b27';
+  ctx.fillRect(0,0,W,H);
+  const sX=W/900, sY=H/400;
   function sp(x,y){return [x*sX,y*sY];}
-
-  function drawShape(pts, fillColor, strokeColor) {
+  function drawShape(pts, fc, sc) {
     ctx.beginPath();
-    pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(...sp(...p)); else ctx.lineTo(...sp(...p)); });
-    ctx.closePath();
-    ctx.fillStyle=fillColor; ctx.fill();
-    ctx.strokeStyle=strokeColor; ctx.lineWidth=1.5; ctx.stroke();
+    pts.forEach(function(p,i){ if(i===0) ctx.moveTo(sp(p[0],p[1])[0],sp(p[0],p[1])[1]); else ctx.lineTo(sp(p[0],p[1])[0],sp(p[0],p[1])[1]); });
+    ctx.closePath(); ctx.fillStyle=fc; ctx.fill(); ctx.strokeStyle=sc; ctx.lineWidth=1.2; ctx.stroke();
   }
-
-  drawShape([[120,60],[140,55],[160,58],[175,65],[185,80],[190,100],[195,120],[200,140],[205,160],[200,180],[190,200],[180,215],[170,225],[160,230],[150,235],[140,240],[130,238],[120,232],[110,220],[105,205],[100,185],[98,165],[100,145],[105,125],[108,105],[110,85],[115,70],[120,60]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
-  drawShape([[580,80],[620,70],[660,75],[700,85],[720,100],[730,120],[725,140],[710,155],[690,160],[665,158],[640,150],[615,140],[595,125],[580,110],[578,95],[580,80]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
-  drawShape([[420,120],[460,100],[510,90],[550,85],[580,90],[600,110],[610,130],[605,155],[590,175],[565,190],[535,200],[500,210],[465,215],[440,210],[420,195],[405,175],[400,155],[405,135],[415,125],[420,120]],'rgba(0,212,170,0.06)','rgba(0,212,170,0.4)');
-
-  ctx.fillStyle='rgba(90,103,133,0.5)'; ctx.font=`${9*sX}px DM Sans`; ctx.textAlign='center';
-  [['South China Sea',350,50],['Strait of Malacca',70,155],['Sabah',650,200],['Sarawak',500,250],['Peninsular Malaysia',148,270]]
-  .forEach(([t,x,y])=>ctx.fillText(t,...sp(x,y)));
-
-  const positions=[[148,148],[155,143],[130,110],[162,210],[120,82],[175,90],[655,115],[500,155],[172,150],[118,70],[188,110],[140,190],[160,175],[135,160],[670,130]];
-  const dots=[];
-
-  users.forEach((user,idx)=>{
-    const score=user.credit_score||0;
-    let color='#5a6785',glow='rgba(90,103,133,0.3)';
+  // Philippines
+  drawShape([[680,30],[700,25],[715,35],[720,60],[725,90],[720,120],[710,140],[695,150],[680,145],[670,125],[665,100],[668,70],[672,45],[680,30]],'rgba(108,99,255,0.08)','rgba(108,99,255,0.4)');
+  drawShape([[650,100],[670,95],[680,110],[675,130],[660,135],[648,120],[650,100]],'rgba(108,99,255,0.08)','rgba(108,99,255,0.4)');
+  // Mainland SE Asia
+  drawShape([[200,20],[220,15],[235,30],[240,60],[245,90],[250,120],[248,150],[240,170],[235,190],[240,210],[245,220],[240,235],[230,240],[220,235],[215,220],[210,200],[205,180],[200,160],[198,140],[200,120],[198,100],[195,80],[195,50],[200,20]],'rgba(90,103,133,0.06)','rgba(90,103,133,0.25)');
+  // Peninsular Malaysia
+  drawShape([[320,180],[330,175],[340,180],[345,195],[348,215],[345,235],[340,250],[335,260],[328,265],[320,260],[315,250],[312,235],[310,215],[312,200],[315,190],[320,180]],'rgba(0,212,170,0.12)','rgba(0,212,170,0.5)');
+  // Borneo
+  drawShape([[400,170],[440,155],[490,148],[540,150],[570,160],[580,175],[575,195],[560,210],[540,220],[510,228],[480,232],[450,230],[425,222],[410,210],[400,195],[398,180],[400,170]],'rgba(0,212,170,0.08)','rgba(0,212,170,0.35)');
+  // Sumatra
+  drawShape([[220,220],[240,210],[260,215],[270,235],[275,260],[270,290],[260,310],[245,320],[230,315],[220,300],[215,280],[212,260],[215,240],[220,220]],'rgba(255,209,102,0.08)','rgba(255,209,102,0.4)');
+  // Java
+  drawShape([[330,290],[370,285],[410,282],[450,285],[470,290],[465,300],[440,305],[400,308],[360,305],[335,300],[330,290]],'rgba(255,209,102,0.08)','rgba(255,209,102,0.4)');
+  // Sulawesi
+  drawShape([[520,250],[540,240],[555,248],[548,270],[555,285],[548,300],[535,295],[525,280],[518,265],[520,250]],'rgba(255,209,102,0.06)','rgba(255,209,102,0.3)');
+  // Country labels
+  var lc = isLight ? 'rgba(50,60,80,0.6)' : 'rgba(90,103,133,0.7)';
+  ctx.fillStyle=lc; ctx.font='bold '+Math.round(11*sX)+'px DM Sans'; ctx.textAlign='center';
+  var labels=[['Malaysia',340,275],['Indonesia',400,340],['Philippines',700,160],['Thailand',230,100],['Vietnam',260,55]];
+  labels.forEach(function(a){ctx.fillText(a[0],a[1]*sX,a[2]*sY);});
+  // Water labels
+  ctx.fillStyle=isLight?'rgba(50,60,80,0.25)':'rgba(90,103,133,0.3)'; ctx.font='italic '+Math.round(9*sX)+'px DM Sans';
+  var waters=[['South China Sea',480,100],['Indian Ocean',150,350],['Pacific Ocean',800,60],['Java Sea',420,315]];
+  waters.forEach(function(a){ctx.fillText(a[0],a[1]*sX,a[2]*sY);});
+  // User dots by country
+  var countryPos = {
+    MY: [[328,220],[335,210],[322,240],[345,225],[330,248],[480,175],[520,170],[460,185]],
+    ID: [[380,295],[400,292],[420,290],[250,270],[260,285],[540,260],[440,298]],
+    PH: [[690,55],[695,80],[685,100],[700,110],[680,130],[692,40],[670,115]]
+  };
+  var dots=[];
+  users.forEach(function(user,idx){
+    var score=user.credit_score||0;
+    var color='#5a6785',glow='rgba(90,103,133,0.3)';
     if(score>=70){color='#06d6a0';glow='rgba(6,214,160,0.4)';}
     else if(score>=50){color='#ffd166';glow='rgba(255,209,102,0.4)';}
     else if(score>0){color='#ff6b6b';glow='rgba(255,107,107,0.4)';}
-    const base=positions[idx%positions.length];
-    const ox=(Math.random()-0.5)*12, oy=(Math.random()-0.5)*12;
-    const [cx,cy]=sp(base[0]+ox,base[1]+oy);
-    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,14*sX);
-    grad.addColorStop(0,glow); grad.addColorStop(1,'transparent');
-    ctx.beginPath(); ctx.arc(cx,cy,14*sX,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx,cy,6*sX,0,Math.PI*2);
-    ctx.fillStyle=color; ctx.fill();
-    ctx.strokeStyle='rgba(13,17,23,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
-    dots.push({x:cx,y:cy,user,color});
+    var cty=user.country||'MY';
+    var pos=countryPos[cty]||countryPos.MY;
+    var base=pos[idx%pos.length];
+    var ox=(Math.random()-0.5)*8,oy=(Math.random()-0.5)*8;
+    var pt=sp(base[0]+ox,base[1]+oy);
+    var cx=pt[0],cy=pt[1];
+    var grad=ctx.createRadialGradient(cx,cy,0,cx,cy,14*sX);
+    grad.addColorStop(0,glow);grad.addColorStop(1,'transparent');
+    ctx.beginPath();ctx.arc(cx,cy,14*sX,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,6*sX,0,Math.PI*2);
+    ctx.fillStyle=color;ctx.fill();
+    ctx.strokeStyle=isLight?'rgba(240,244,248,0.8)':'rgba(13,17,23,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+    dots.push({x:cx,y:cy,user:user,color:color});
   });
-
-  const tooltip=document.getElementById('map-tooltip');
+  var tooltip=document.getElementById('map-tooltip');
   canvas.onmousemove=function(e){
-    const rect=canvas.getBoundingClientRect();
-    const mx=(e.clientX-rect.left)*(W/rect.width), my=(e.clientY-rect.top)*(H/rect.height);
-    let found=null;
-    dots.forEach(d=>{ if(Math.sqrt((mx-d.x)**2+(my-d.y)**2)<16) found=d; });
+    var rect=canvas.getBoundingClientRect();
+    var mx=(e.clientX-rect.left)*(W/rect.width),my=(e.clientY-rect.top)*(H/rect.height);
+    var found=null;
+    dots.forEach(function(d){if(Math.sqrt((mx-d.x)*(mx-d.x)+(my-d.y)*(my-d.y))<16)found=d;});
     if(found){
-      const u=found.user, score=u.credit_score||0;
-      const rev=(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
-      const status=score>=70?t('loan_ready'):score>=50?t('in_progress'):score>0?t('building'):t('not_scored');
-      tooltip.innerHTML=`<strong>${u.owner_name||'—'}</strong><div style="color:#5a6785;font-size:11px;">${u.business_name||'—'}</div><div style="margin-top:6px;color:${found.color};font-weight:700;">Score: ${score||'N/A'}/100</div><div style="font-size:11px;color:#5a6785;">Revenue: ${getCur(u)}${rev.toLocaleString()}</div><div style="font-size:11px;margin-top:2px;">${status}</div>`;
+      var u=found.user,sc=u.credit_score||0;
+      var rev=(u.sales||[]).reduce(function(a,x){return a+(x.amount||0);},0);
+      var cc=getUserCountry(u);
+      var st=sc>=70?t('loan_ready'):sc>=50?t('in_progress'):sc>0?t('building'):t('not_scored');
+      tooltip.innerHTML='<strong>'+(u.owner_name||'—')+'</strong><div style="color:#5a6785;font-size:11px;">'+(u.business_name||'—')+' · '+cc.flag+' '+cc.name+'</div><div style="margin-top:6px;color:'+found.color+';font-weight:700;">Score: '+(sc||'N/A')+'/100</div><div style="font-size:11px;color:#5a6785;">Revenue: '+getCur(u)+rev.toLocaleString()+'</div><div style="font-size:11px;margin-top:2px;">'+st+'</div>';
       tooltip.style.display='block';
       tooltip.style.left=(e.clientX-rect.left+14)+'px';
       tooltip.style.top=(e.clientY-rect.top-10)+'px';
       canvas.style.cursor='pointer';
-    } else { tooltip.style.display='none'; canvas.style.cursor='default'; }
+    }else{tooltip.style.display='none';canvas.style.cursor='default';}
   };
-  canvas.onmouseleave=()=>{ tooltip.style.display='none'; };
+  canvas.onmouseleave=function(){tooltip.style.display='none';};
 }
 window.drawMalaysiaMap=drawMalaysiaMap;
 </script>
