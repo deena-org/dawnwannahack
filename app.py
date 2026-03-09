@@ -430,6 +430,47 @@ def handle_text(phone, text):
     elif state == "ai_chat":
         handle_ai_chat(phone, text, user_ref)
 
+    elif state == "credit_confirm":
+        if text_upper in ["YA", "YES", "Y", "SAMA", "BETUL", "CORRECT"]:
+            user_ref.update({"state": "menu"})
+            if lang == "bm":
+                send_message(phone, "⏳ Sedang mengira skor kredit awak...")
+            else:
+                send_message(phone, "⏳ Calculating your credit score...")
+            generate_credit_score(phone, user_ref)
+        elif text_upper in ["TIDAK", "NO", "N", "TAK", "CHANGE"]:
+            # Ask only the 2 questions that might change (bank + registration)
+            user_ref.update({"state": "credit_update_bank"})
+            if lang == "bm":
+                send_message(phone, "🔄 *Kemaskini Maklumat*\n\nSoalan 1️⃣: Adakah awak ada *akaun bank perniagaan*?\n_(Balas: Ya / Tidak)_")
+            else:
+                send_message(phone, "🔄 *Update Info*\n\nQuestion 1️⃣: Do you have a *business bank account*?\n_(Reply: Yes / No)_")
+        elif text_upper == "MENU":
+            user_ref.update({"state": "menu"})
+            handle_menu(phone, "MENU", user_ref)
+        else:
+            if lang == "bm":
+                send_message(phone, "Sila balas *YA* atau *TIDAK*\n\nYA → Jana skor terus\nTIDAK → Kemaskini maklumat\nMENU → Kembali")
+            else:
+                send_message(phone, "Please reply *YES* or *NO*\n\nYES → Generate score now\nNO → Update info\nMENU → Go back")
+
+    elif state == "credit_update_bank":
+        user_ref.update({"has_bank_account": text, "state": "credit_update_reg"})
+        user_data_now = user_ref.get().to_dict()
+        cc = get_country(user_data_now)
+        if lang == "bm":
+            send_message(phone, f"✅ Dikemaskini!\n\nSoalan 2️⃣: {cc['reg_question_bm']}\n_(Balas: Ya / Tidak)_")
+        else:
+            send_message(phone, f"✅ Updated!\n\nQuestion 2️⃣: {cc['reg_question_en']}\n_(Reply: Yes / No)_")
+
+    elif state == "credit_update_reg":
+        user_ref.update({"has_ssm": text, "state": "menu"})
+        if lang == "bm":
+            send_message(phone, "⏳ Sedang mengira skor kredit awak...")
+        else:
+            send_message(phone, "⏳ Calculating your credit score...")
+        generate_credit_score(phone, user_ref)
+
     elif state == "credit_q1":
         user_ref.update({"biz_age": text, "state": "credit_q2"})
         if lang == "bm":
@@ -685,24 +726,28 @@ def handle_menu(phone, text, user_ref):
         check_data = user_ref.get().to_dict()
         has_answers = check_data.get("biz_age") and check_data.get("has_bank_account") and check_data.get("has_ssm")
         if has_answers:
-            # Skip questions, generate score directly with updated data
+            # Show current info and ask if anything changed
+            user_ref.update({"state": "credit_confirm"})
             if lang == "bm":
                 send_message(phone,
-                    "📊 *Mengemas kini skor kredit awak...*\n\n"
-                    f"🏦 Akaun bank: {check_data.get('has_bank_account')}\n"
-                    f"📝 {cc['registration']}: {check_data.get('has_ssm')}\n\n"
-                    "⏳ Mengira skor berdasarkan data terkini...\n\n"
-                    "💡 _Taip KEMASKINI untuk ubah maklumat_"
+                    "📊 *Jana Skor Kredit*\n\n"
+                    "Maklumat semasa awak:\n\n"
+                    f"🏦 Akaun bank: *{check_data.get('has_bank_account')}*\n"
+                    f"📝 {cc['registration']}: *{check_data.get('has_ssm')}*\n\n"
+                    "Adakah maklumat ini masih *sama*?\n\n"
+                    "Taip *YA* → Jana skor terus\n"
+                    "Taip *TIDAK* → Kemaskini maklumat"
                 )
             else:
                 send_message(phone,
-                    "📊 *Updating your credit score...*\n\n"
-                    f"🏦 Bank account: {check_data.get('has_bank_account')}\n"
-                    f"📝 {cc['registration']}: {check_data.get('has_ssm')}\n\n"
-                    "⏳ Calculating score based on latest data...\n\n"
-                    "💡 _Type UPDATE to change your info_"
+                    "📊 *Generate Credit Score*\n\n"
+                    "Your current info:\n\n"
+                    f"🏦 Bank account: *{check_data.get('has_bank_account')}*\n"
+                    f"📝 {cc['registration']}: *{check_data.get('has_ssm')}*\n\n"
+                    "Is this info still *correct*?\n\n"
+                    "Type *YES* → Generate score now\n"
+                    "Type *NO* → Update info"
                 )
-            generate_credit_score(phone, user_ref)
         else:
             user_ref.update({"state": "credit_q1"})
             if lang == "bm":
