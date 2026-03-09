@@ -342,13 +342,34 @@ def handle_text(phone, text):
             send_message(phone, f"*{text}* — great name! 🌟\n\nQuestion 3️⃣: What do you *sell or offer*?\n_(Example: traditional kuih, hijab, haircut service)_")
 
     elif state == "ask_product":
-        user_ref.update({"product": text, "state": "ask_revenue"})
+        # Extract product keywords from natural language
+        extract_prompt = f"""
+Extract ONLY the product or service keywords from this text: "{text}"
+Return a short comma-separated list of products/services, maximum 5 words total.
+Do NOT include filler words like "kedai saya", "I sell", "my shop is", "yang menjual" etc.
+Examples:
+- "kedai saya ialah bakeri yang menjual roti, pastri dan cookies" → "roti, pastri, cookies"
+- "I sell traditional kuih and catering services" → "kuih tradisional, katering"
+- "tudung dan pakaian muslimah" → "tudung, pakaian muslimah"
+- "servis gunting rambut" → "servis gunting rambut"
+Return ONLY the extracted keywords, nothing else.
+"""
+        try:
+            extract_response = client.models.generate_content(model=MODEL, contents=extract_prompt)
+            product_clean = extract_response.text.strip().strip('"').strip("'")
+            # Fallback if AI returns something too long or empty
+            if len(product_clean) > 60 or len(product_clean) < 2:
+                product_clean = text
+        except:
+            product_clean = text
+
+        user_ref.update({"product": product_clean, "state": "ask_revenue"})
         user_data_now = user_ref.get().to_dict()
         cc = get_country(user_data_now)
         if lang == "bm":
-            send_message(phone, f"*{text}* — menarik! 🛍️\n\nSoalan 4️⃣: Dalam sebulan, lebih kurang berapa *pendapatan* awak?\n_(Contoh: {cc['income_examples']})_")
+            send_message(phone, f"*{product_clean}* — menarik! 🛍️\n\nSoalan 4️⃣: Dalam sebulan, lebih kurang berapa *pendapatan* awak?\n_(Contoh: {cc['income_examples']})_")
         else:
-            send_message(phone, f"*{text}* — interesting! 🛍️\n\nQuestion 4️⃣: Roughly how much is your *monthly income*?\n_(Example: {cc['income_examples']})_")
+            send_message(phone, f"*{product_clean}* — interesting! 🛍️\n\nQuestion 4️⃣: Roughly how much is your *monthly income*?\n_(Example: {cc['income_examples']})_")
 
     elif state == "ask_revenue":
         user_data = user_ref.get().to_dict()
@@ -548,19 +569,26 @@ def smart_handle(phone, text, user_ref):
         send_message(phone, "🔄 Profil dipadam. Taip HAI untuk mula semula." if lang=="bm" else "🔄 Profile deleted. Type HI to start again.")
         return
 
-    # AI intent detection
+    # AI intent detection — include user's business context for better classification
+    business_product = user_data.get("product", "")
     prompt = f"""
 You are an intent classifier for a WhatsApp business bot.
+The user's business sells/offers: {business_product}
+
 Classify this message into ONE of these intents:
 
 INTENTS:
-- log_sale: user is recording a sale (mentions selling, jual, dapat, sold, received money)
-- log_expense: user is recording an expense (mentions buying supplies, beli bahan, spent, beli, purchase)
+- log_sale: user is recording INCOME/REVENUE. Keywords: jual, dapat, sold, received money, orang, customer, client, pelanggan. IMPORTANT: If the user mentions their own product/service (like "{business_product}") and mentions receiving money or serving customers, this is a SALE not an expense. For service businesses (potong rambut, servis, repair, etc), serving customers = making a sale.
+- log_expense: user is recording a COST/SPENDING. Keywords: beli bahan, bought supplies, spent on, bayar bil, purchase materials, restock. This is money GOING OUT to suppliers/bills, NOT money coming in from customers.
 - check_score: user asking about credit score (skor, score, markah)
 - check_summary: user asking about sales summary (ringkasan, summary, jualan, berapa duit)
 - ask_ai: user asking a business question (how to, macam mana, tips, advice, cara)
 - show_menu: user wants to see menu options
 - unknown: cannot classify
+
+KEY RULE: If the message mentions "dapat" (received) with an amount, it is ALWAYS a sale.
+KEY RULE: If the message mentions serving customers or doing their service work, it is a SALE.
+KEY RULE: Only classify as expense if the user is BUYING supplies or PAYING bills.
 
 Message: "{text}"
 
@@ -1108,6 +1136,9 @@ def generate_credit_score(phone, user_ref):
     total = sum(s.get("amount", 0) for s in sales)
     count = len(sales)
     lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
+    reg = cc["registration"]
 
     # STEP 1: Calculate deterministic score
     score_num, level_bm, level_en, breakdown = calculate_credit_score(user_data)
@@ -1134,7 +1165,7 @@ Score breakdown:
 - Transaction Consistency: {breakdown['consistency']}/25
 - Revenue Strength: {breakdown['revenue']}/20
 - Business Age: {breakdown['age']}/15
-- Formalization (SSM + Bank): {breakdown['formalization']}/20
+- Formalization ({reg} + Bank): {breakdown['formalization']}/20
 - Record Volume: {breakdown['volume']}/10
 - Expense Discipline: {breakdown['expenses']}/10
 
@@ -1143,7 +1174,7 @@ Business info:
 - Business: {user_data.get('business_name')}
 - Product: {user_data.get('product')}
 - Reported income: {user_data.get('monthly_revenue')}
-- Total sales recorded: RM{total}
+- Total sales recorded: {cur}{total}
 - Transactions: {count}
 
 Use EXACTLY this format:

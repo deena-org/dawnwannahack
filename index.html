@@ -429,7 +429,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="drawer-user-biz">—</div>
       </div>
       <button class="drawer-item" onclick="refreshData();closeDrawer();">
-        <span class="drawer-item-icon">↻</span> Refresh Data
+        <span class="drawer-item-icon">↻</span> <span data-i18n="refresh_data">Refresh Data</span>
       </button>
       <button class="drawer-item" onclick="toggleTheme();closeDrawer();">
         <span class="drawer-item-icon" id="drawer-theme-icon">☀️</span> <span id="drawer-theme-label">Switch to Light</span>
@@ -439,7 +439,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" onclick="logout();closeDrawer();">
-        <span class="drawer-item-icon">⏻</span> Logout
+        <span class="drawer-item-icon">⏻</span> <span data-i18n="logout">Logout</span>
       </button>
     </div>
   </div>
@@ -555,45 +555,45 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
   <!-- DESKTOP / BANK VIEW -->
   <div id="desktop-view" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);">BizBuddy Bank Dashboard</div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);" data-i18n="bank_dashboard">BizBuddy Bank Dashboard</div>
       <button onclick="exportPDF()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:9px 18px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-        📄 Export Report
+        📄 <span data-i18n="export_report">Export Report</span>
       </button>
     </div>
     <div class="desk-grid fade-up fade-up-1">
       <div class="desk-stat" style="border-left-color:#6c63ff;">
         <div class="desk-stat-icon">🏪</div>
         <div class="desk-stat-val" id="d-total-msme">—</div>
-        <div class="desk-stat-label">Total MSMEs</div>
-        <div class="desk-stat-trend">↑ Growing portfolio</div>
+        <div class="desk-stat-label" data-i18n="total_msmes">Total MSMEs</div>
+        <div class="desk-stat-trend" data-i18n="growing_portfolio">↑ Growing portfolio</div>
       </div>
       <div class="desk-stat" style="border-left-color:#06d6a0;">
         <div class="desk-stat-icon">✅</div>
         <div class="desk-stat-val" style="color:#06d6a0" id="d-loan-ready">—</div>
-        <div class="desk-stat-label">Loan Ready (70+)</div>
+        <div class="desk-stat-label" data-i18n="loan_ready_70">Loan Ready (70+)</div>
         <div class="desk-stat-trend" id="d-loan-pct">— of portfolio</div>
       </div>
       <div class="desk-stat" style="border-left-color:#ffd166;">
         <div class="desk-stat-icon">⭐</div>
         <div class="desk-stat-val" style="color:#ffd166" id="d-avg-score">—</div>
-        <div class="desk-stat-label">Avg Credit Score</div>
-        <div class="desk-stat-trend">Portfolio average</div>
+        <div class="desk-stat-label" data-i18n="avg_credit_score">Avg Credit Score</div>
+        <div class="desk-stat-trend" data-i18n="portfolio_avg">Portfolio average</div>
       </div>
       <div class="desk-stat" style="border-left-color:#00d4aa;">
         <div class="desk-stat-icon">💰</div>
         <div class="desk-stat-val" id="d-total-rev">RM—</div>
-        <div class="desk-stat-label">Total Tracked Revenue</div>
-        <div class="desk-stat-trend">Verified transactions</div>
+        <div class="desk-stat-label" data-i18n="total_tracked_rev">Total Tracked Revenue</div>
+        <div class="desk-stat-trend" data-i18n="verified_txn">Verified transactions</div>
       </div>
     </div>
 
     <div class="desk-row fade-up fade-up-2">
       <div class="desk-card">
-        <h3>🏪 MSME Portfolio</h3>
+        <h3>🏪 <span data-i18n="msme_portfolio">MSME Portfolio</span></h3>
         <div class="table-search">
           <input type="text" id="msme-search" placeholder="🔍 Search by name or business..." oninput="filterTable()"/>
           <select id="msme-filter" onchange="filterTable()">
-            <option value="all">All Status</option>
+            <option value="all" data-i18n="all_status">All Status</option>
             <option value="ready">✅ Loan Ready</option>
             <option value="progress">🔄 In Progress</option>
             <option value="building">📈 Building</option>
@@ -603,12 +603,12 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
           <table class="msme-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Business</th>
-                <th>Product</th>
-                <th>Revenue</th>
-                <th>Score</th>
-                <th>Status</th>
+                <th data-i18n="th_name">Name</th>
+                <th data-i18n="th_business">Business</th>
+                <th data-i18n="th_product">Product</th>
+                <th data-i18n="th_revenue">Revenue</th>
+                <th data-i18n="th_score">Score</th>
+                <th data-i18n="th_status">Status</th>
               </tr>
             </thead>
             <tbody id="msme-table-body"></tbody>
@@ -616,10 +616,10 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         </div>
       </div>
       <div class="desk-card">
-        <h3>📊 Score Distribution</h3>
+        <h3>📊 <span data-i18n="score_dist">Score Distribution</span></h3>
         <div class="dist-bars" id="dist-bars"></div>
         <div style="margin-top:24px;">
-          <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">🥧 Portfolio Breakdown</h3>
+          <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">🥧 <span data-i18n="portfolio_breakdown">Portfolio Breakdown</span></h3>
           <div style="height:180px;position:relative;">
             <canvas id="portfolio-chart"></canvas>
           </div>
@@ -629,28 +629,28 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 
     <div class="desk-row fade-up fade-up-3">
       <div class="desk-card">
-        <h3>📈 Revenue Trends</h3>
+        <h3>📈 <span data-i18n="revenue_trends">Revenue Trends</span></h3>
         <div style="height:200px;position:relative;">
           <canvas id="revenue-chart"></canvas>
         </div>
       </div>
       <div class="desk-card">
-        <h3>🎯 Loan Pipeline</h3>
+        <h3>🎯 <span data-i18n="loan_pipeline">Loan Pipeline</span></h3>
         <div id="loan-pipeline"></div>
       </div>
     </div>
     <!-- MALAYSIA MAP -->
     <div class="map-card fade-up fade-up-4">
-      <h3>🗺️ MSME Distribution Map — Malaysia</h3>
+      <h3>🗺️ <span data-i18n="msme_map">MSME Distribution Map — Malaysia</span></h3>
       <div style="position:relative;">
         <canvas id="malaysia-map" height="320" style="width:100%;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;"></canvas>
         <div class="map-tooltip" id="map-tooltip"></div>
       </div>
       <div class="map-legend">
-        <div class="map-legend-item"><div class="map-legend-dot" style="background:#06d6a0"></div>Loan Ready (70+)</div>
-        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ffd166"></div>In Progress (50-69)</div>
-        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff6b6b"></div>Building (&lt;50)</div>
-        <div class="map-legend-item"><div class="map-legend-dot" style="background:#5a6785"></div>Unscored</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#06d6a0"></div><span data-i18n="legend_ready">Loan Ready (70+)</span></div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ffd166"></div><span data-i18n="legend_progress">In Progress (50-69)</span></div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff6b6b"></div><span data-i18n="legend_building">Building (&lt;50)</span></div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#5a6785"></div><span data-i18n="legend_unscored">Unscored</span></div>
       </div>
     </div>
   </div>
@@ -892,7 +892,7 @@ function updateLastUpdated() {
   const el = document.getElementById('last-updated');
   if (!el) return;
   const now = new Date();
-  el.textContent = 'Updated ' + now.toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
+  el.textContent = (currentLang === 'bm' ? 'Dikemaskini ' : 'Updated ') + now.toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
 }
 
 // Auto-refresh removed — only refresh on login, manual refresh button, or pull-to-refresh
@@ -1253,6 +1253,32 @@ const translations = {
     switch_dark: 'Switch to Dark',
     logout: 'Logout',
     lang_label: 'Bahasa Melayu',
+    bank_dashboard: 'BizBuddy Bank Dashboard',
+    export_report: 'Export Report',
+    total_msmes: 'Total MSMEs',
+    growing_portfolio: '↑ Growing portfolio',
+    loan_ready_70: 'Loan Ready (70+)',
+    avg_credit_score: 'Avg Credit Score',
+    portfolio_avg: 'Portfolio average',
+    total_tracked_rev: 'Total Tracked Revenue',
+    verified_txn: 'Verified transactions',
+    msme_portfolio: 'MSME Portfolio',
+    all_status: 'All Status',
+    th_name: 'Name',
+    th_business: 'Business',
+    th_product: 'Product',
+    th_revenue: 'Revenue',
+    th_score: 'Score',
+    th_status: 'Status',
+    score_dist: 'Score Distribution',
+    portfolio_breakdown: 'Portfolio Breakdown',
+    revenue_trends: 'Revenue Trends',
+    loan_pipeline: 'Loan Pipeline',
+    msme_map: 'MSME Distribution Map — Malaysia',
+    legend_ready: 'Loan Ready (70+)',
+    legend_progress: 'In Progress (50-69)',
+    legend_building: 'Building (<50)',
+    legend_unscored: 'Unscored',
   },
   bm: {
     credit_readiness: 'Skor Kesediaan Kredit',
@@ -1318,6 +1344,32 @@ const translations = {
     switch_dark: 'Tukar ke Gelap',
     logout: 'Log Keluar',
     lang_label: 'English',
+    bank_dashboard: 'Papan Pemuka Bank BizBuddy',
+    export_report: 'Eksport Laporan',
+    total_msmes: 'Jumlah MSME',
+    growing_portfolio: '↑ Portfolio berkembang',
+    loan_ready_70: 'Layak Pinjaman (70+)',
+    avg_credit_score: 'Purata Skor Kredit',
+    portfolio_avg: 'Purata portfolio',
+    total_tracked_rev: 'Jumlah Hasil Direkod',
+    verified_txn: 'Transaksi disahkan',
+    msme_portfolio: 'Portfolio MSME',
+    all_status: 'Semua Status',
+    th_name: 'Nama',
+    th_business: 'Perniagaan',
+    th_product: 'Produk',
+    th_revenue: 'Hasil',
+    th_score: 'Skor',
+    th_status: 'Status',
+    score_dist: 'Taburan Skor',
+    portfolio_breakdown: 'Pecahan Portfolio',
+    revenue_trends: 'Trend Hasil',
+    loan_pipeline: 'Saluran Pinjaman',
+    msme_map: 'Peta Taburan MSME — Malaysia',
+    legend_ready: 'Layak Pinjaman (70+)',
+    legend_progress: 'Dalam Proses (50-69)',
+    legend_building: 'Membina (<50)',
+    legend_unscored: 'Belum Dinilai',
   }
 };
 
@@ -1344,9 +1396,21 @@ window.toggleLang = () => {
   currentLang = currentLang === 'en' ? 'bm' : 'en';
   localStorage.setItem('nc-lang', currentLang);
   applyTranslations();
+  updateLastUpdated();
+  // Update drawer language button label
+  const langLabel = document.getElementById('drawer-lang-label');
+  if (langLabel) langLabel.textContent = currentLang === 'en' ? 'Bahasa Melayu' : 'English';
+  // Update bank portal badge
+  if (document.getElementById('desktop-view').style.display !== 'none') {
+    document.getElementById('user-badge').textContent = currentLang === 'bm' ? 'Portal Bank' : 'Bank Portal';
+  }
   // Re-render dynamic content if user is loaded
   if (currentUser) {
     loadMobileView(currentUser);
+  }
+  // Re-render bank view if visible
+  if (allUsers.length > 0 && document.getElementById('desktop-view').style.display !== 'none') {
+    renderBankView(allUsers);
   }
 };
 
@@ -1557,7 +1621,7 @@ function buildGrowthTrends(sales) {
 
 // ── BANK VIEW ──
 async function loadBankView() {
-  document.getElementById('user-badge').textContent = 'Bank Portal';
+  document.getElementById('user-badge').textContent = currentLang === 'bm' ? 'Portal Bank' : 'Bank Portal';
   // Show loading state
   const tbody = document.getElementById('msme-table-body');
   if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;"><div class="loader-ring" style="margin:0 auto 12px;width:28px;height:28px;border-width:2px;"></div>Loading portfolio data...</td></tr>';
@@ -1635,7 +1699,7 @@ function renderBankView(users) {
   document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + (currentLang === 'bm' ? '% portfolio' : '% of portfolio') : '—';
   if (avgScore) animateCount('d-avg-score', 0, avgScore, 1000, '', '');
   else document.getElementById('d-avg-score').textContent = '—';
-  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', '');
+  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', ''); // Aggregate portfolio in RM
 
   // Table
   const tbody = document.getElementById('msme-table-body');
@@ -1697,7 +1761,7 @@ function renderBankView(users) {
   portfolioChartInstance = new Chart(pCtx, {
     type: 'doughnut',
     data: {
-      labels: ['Loan Ready', 'In Progress', 'Building', 'Unscored'],
+      labels: [t('loan_ready'), t('in_progress'), t('building'), t('not_scored')],
       datasets: [{ data: rCounts, backgroundColor: ['#06d6a0','#ffd166','#ff6b6b','#2a3248'], borderWidth: 0 }]
     },
     options: {
@@ -1878,7 +1942,7 @@ window.exportPDF = () => {
   const rows = users.map(u => {
     const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
     const score = u.credit_score||0;
-    const status = score>=70?'Loan Ready':score>=50?'In Progress':'Building';
+    const status = score>=70?t('loan_ready'):score>=50?t('in_progress'):t('building');
     return `<tr style="border-bottom:1px solid #eee;">
       <td style="padding:8px 12px;">${u.owner_name||'—'}</td>
       <td style="padding:8px 12px;">${u.business_name||'—'}</td>
@@ -1893,12 +1957,12 @@ window.exportPDF = () => {
 </head><body>
 <h1>BizBuddy</h1><div class="subtitle">Portfolio Report — Generated ${date}</div>
 <div class="stats">
-  <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total MSMEs</div></div>
-  <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">Loan Ready (70+)</div></div>
-  <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">Avg Credit Score</div></div>
-  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">Total Revenue Tracked</div></div>
+  <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">${t('total_msmes')}</div></div>
+  <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">${t('loan_ready_70')}</div></div>
+  <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">${t('avg_credit_score')}</div></div>
+  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">${t('total_tracked_rev')}</div></div>
 </div>
-<table><thead><tr><th>Name</th><th>Business</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
+<table><thead><tr><th>${t('th_name')}</th><th>${t('th_business')}</th><th>${t('th_product')}</th><th>${t('th_revenue')}</th><th>${t('th_score')}</th><th>${t('th_status')}</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="footer">Powered by BizBuddy AI · Confidential Portfolio Report · ${date}</div>
 </body></html>`;
@@ -1972,7 +2036,7 @@ function drawMalaysiaMap(users) {
     if(found){
       const u=found.user, score=u.credit_score||0;
       const rev=(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
-      const status=score>=70?'✅ Loan Ready':score>=50?'🔄 In Progress':score>0?'📈 Building':'⏳ Unscored';
+      const status=score>=70?t('loan_ready'):score>=50?t('in_progress'):score>0?t('building'):t('not_scored');
       tooltip.innerHTML=`<strong>${u.owner_name||'—'}</strong><div style="color:#5a6785;font-size:11px;">${u.business_name||'—'}</div><div style="margin-top:6px;color:${found.color};font-weight:700;">Score: ${score||'N/A'}/100</div><div style="font-size:11px;color:#5a6785;">Revenue: ${getCur(u)}${rev.toLocaleString()}</div><div style="font-size:11px;margin-top:2px;">${status}</div>`;
       tooltip.style.display='block';
       tooltip.style.left=(e.clientX-rect.left+14)+'px';
