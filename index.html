@@ -1178,6 +1178,16 @@ function buildCertificate(user, score) {
 // ══════════════════════════════════════════════
 let currentLang = localStorage.getItem('nc-lang') || 'en';
 
+// ASEAN Country Config — matches app.py COUNTRY_CONFIG
+const COUNTRY_CONFIG = {
+  MY: { currency: 'RM', registration: 'SSM', loan: 'TEKUN', flag: '🇲🇾', name: 'Malaysia' },
+  ID: { currency: 'Rp', registration: 'NIB', loan: 'KUR', flag: '🇮🇩', name: 'Indonesia' },
+  PH: { currency: '₱', registration: 'DTI', loan: 'SB Corp', flag: '🇵🇭', name: 'Philippines' },
+};
+function getUserCountry(user) { return COUNTRY_CONFIG[user?.country || 'MY'] || COUNTRY_CONFIG.MY; }
+function getCur(user) { return getUserCountry(user).currency; }
+function getReg(user) { return getUserCountry(user).registration; }
+
 const translations = {
   en: {
     credit_readiness: 'Credit Readiness Score',
