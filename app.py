@@ -67,6 +67,65 @@ def t(user_data, bm_text, en_text):
     return en_text if is_english(user_data) else bm_text
 
 # ─────────────────────────────────────
+# ASEAN COUNTRY CONFIG
+# ─────────────────────────────────────
+COUNTRY_CONFIG = {
+    "MY": {
+        "name": "Malaysia",
+        "flag": "🇲🇾",
+        "currency": "RM",
+        "loan_program": "TEKUN",
+        "loan_amount": "RM50,000",
+        "loan_rate": "4%",
+        "registration": "SSM",
+        "reg_url": "ssm.com.my",
+        "reg_question_bm": "Adakah perniagaan awak dah *daftar SSM*?",
+        "reg_question_en": "Is your business *registered with SSM*?",
+        "income_examples": "RM500, RM2000, RM5000",
+        "sale_example_bm": "Jual 10 bekas kuih dapat RM150",
+        "sale_example_en": "Sold 10 boxes of cookies for RM150",
+    },
+    "ID": {
+        "name": "Indonesia",
+        "flag": "🇮🇩",
+        "currency": "Rp",
+        "loan_program": "KUR (Kredit Usaha Rakyat)",
+        "loan_amount": "Rp500 juta",
+        "loan_rate": "6%",
+        "registration": "NIB",
+        "reg_url": "oss.go.id",
+        "reg_question_bm": "Adakah perniagaan awak dah *daftar NIB*?",
+        "reg_question_en": "Is your business *registered with NIB (OSS)*?",
+        "income_examples": "Rp2jt, Rp5jt, Rp10jt",
+        "sale_example_bm": "Jual 10 bungkus nasi dapat Rp500rb",
+        "sale_example_en": "Sold 10 packs of food for Rp500k",
+    },
+    "PH": {
+        "name": "Philippines",
+        "flag": "🇵🇭",
+        "currency": "₱",
+        "loan_program": "SB Corp (Small Business Corp)",
+        "loan_amount": "₱500,000",
+        "loan_rate": "8%",
+        "registration": "DTI",
+        "reg_url": "bnrs.dti.gov.ph",
+        "reg_question_bm": "Adakah perniagaan awak dah *daftar DTI*?",
+        "reg_question_en": "Is your business *registered with DTI*?",
+        "income_examples": "₱10k, ₱30k, ₱50k",
+        "sale_example_bm": "Jual 10 item dapat ₱5000",
+        "sale_example_en": "Sold 10 items for ₱5000",
+    },
+}
+
+def get_country(user_data):
+    """Get country config for user, defaults to Malaysia"""
+    code = user_data.get("country", "MY")
+    return COUNTRY_CONFIG.get(code, COUNTRY_CONFIG["MY"])
+
+def get_currency(user_data):
+    return get_country(user_data)["currency"]
+
+# ─────────────────────────────────────
 # HANDLE TEXT
 # ─────────────────────────────────────
 def handle_text(phone, text):
@@ -174,21 +233,27 @@ def handle_text(phone, text):
     if state == "ask_consent":
         if text_upper in ["SETUJU", "AGREE", "YES", "YA", "OK"]:
             user_ref.update({
-                "state": "ask_owner_name",
+                "state": "ask_country",
                 "consent": True,
                 "consent_date": str(datetime.now())
             })
             if lang == "bm":
                 send_message(phone,
                     "✅ *Terima kasih!* Data awak dilindungi.\n\n"
-                    "Jom mulakan! 🚀\n\n"
-                    "Soalan 1️⃣: Apa *nama awak*?"
+                    "🌏 *Negara mana awak beroperasi?*\n\n"
+                    "1️⃣ 🇲🇾 Malaysia\n"
+                    "2️⃣ 🇮🇩 Indonesia\n"
+                    "3️⃣ 🇵🇭 Philippines\n\n"
+                    "_Balas dengan nombor pilihan_"
                 )
             else:
                 send_message(phone,
                     "✅ *Thank you!* Your data is protected.\n\n"
-                    "Let's get started! 🚀\n\n"
-                    "Question 1️⃣: What is your *name*?"
+                    "🌏 *Which country do you operate in?*\n\n"
+                    "1️⃣ 🇲🇾 Malaysia\n"
+                    "2️⃣ 🇮🇩 Indonesia\n"
+                    "3️⃣ 🇵🇭 Philippines\n\n"
+                    "_Reply with your choice number_"
                 )
         else:
             if lang == "bm":
@@ -203,6 +268,36 @@ def handle_text(phone, text):
                     "Type *AGREE* to continue\n"
                     "Type *BM* to switch to Bahasa Malaysia first"
                 )
+
+    elif state == "ask_country":
+        country_map = {"1": "MY", "2": "ID", "3": "PH"}
+        if text_upper in country_map:
+            code = country_map[text_upper]
+            cc = COUNTRY_CONFIG[code]
+            user_ref.update({"country": code, "state": "ask_owner_name"})
+            if lang == "bm":
+                send_message(phone,
+                    f"{cc['flag']} *{cc['name']} dipilih!*\n\n"
+                    f"Mata wang: {cc['currency']}\n"
+                    f"Program pinjaman: {cc['loan_program']}\n"
+                    f"Pendaftaran: {cc['registration']}\n\n"
+                    "Jom mulakan! 🚀\n\n"
+                    "Soalan 1️⃣: Apa *nama awak*?"
+                )
+            else:
+                send_message(phone,
+                    f"{cc['flag']} *{cc['name']} selected!*\n\n"
+                    f"Currency: {cc['currency']}\n"
+                    f"Loan program: {cc['loan_program']}\n"
+                    f"Registration: {cc['registration']}\n\n"
+                    "Let's get started! 🚀\n\n"
+                    "Question 1️⃣: What is your *name*?"
+                )
+        else:
+            if lang == "bm":
+                send_message(phone, "Sila pilih 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
+            else:
+                send_message(phone, "Please choose 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
 
     elif state == "ask_owner_name":
         user_ref.update({"owner_name": text, "state": "ask_business_name"})
@@ -220,10 +315,12 @@ def handle_text(phone, text):
 
     elif state == "ask_product":
         user_ref.update({"product": text, "state": "ask_revenue"})
+        user_data_now = user_ref.get().to_dict()
+        cc = get_country(user_data_now)
         if lang == "bm":
-            send_message(phone, f"*{text}* — menarik! 🛍️\n\nSoalan 4️⃣: Dalam sebulan, lebih kurang berapa *pendapatan* awak?\n_(Contoh: RM500, RM2000, RM5000)_")
+            send_message(phone, f"*{text}* — menarik! 🛍️\n\nSoalan 4️⃣: Dalam sebulan, lebih kurang berapa *pendapatan* awak?\n_(Contoh: {cc['income_examples']})_")
         else:
-            send_message(phone, f"*{text}* — interesting! 🛍️\n\nQuestion 4️⃣: Roughly how much is your *monthly income*?\n_(Example: RM500, RM2000, RM5000)_")
+            send_message(phone, f"*{text}* — interesting! 🛍️\n\nQuestion 4️⃣: Roughly how much is your *monthly income*?\n_(Example: {cc['income_examples']})_")
 
     elif state == "ask_revenue":
         user_data = user_ref.get().to_dict()
@@ -264,13 +361,14 @@ def handle_text(phone, text):
         if text_upper in ["HAI", "HI", "HELLO", "START"]:
             user_data = user_ref.get().to_dict()
             owner_name = user_data.get("owner_name", "Peniaga")
+            cur = get_currency(user_data)
             sales = user_data.get("sales", [])
             total = sum(s.get("amount", 0) for s in sales)
             score = user_data.get("credit_score", 0)
             if lang == "bm":
                 send_message(phone,
                     f"👋 *Selamat kembali, {owner_name}!*\n\n"
-                    f"📊 Jualan terkumpul: RM{total}\n"
+                    f"📊 Jualan terkumpul: {cur}{total}\n"
                     f"⭐ Skor kredit: {score if score else 'Belum dijana'}\n\n"
                     "Awak boleh terus taip apa sahaja!\n"
                     "Contoh:\n"
@@ -282,7 +380,7 @@ def handle_text(phone, text):
             else:
                 send_message(phone,
                     f"👋 *Welcome back, {owner_name}!*\n\n"
-                    f"📊 Total sales: RM{total}\n"
+                    f"📊 Total sales: {cur}{total}\n"
                     f"⭐ Credit score: {score if score else 'Not yet generated'}\n\n"
                     "You can just type anything naturally!\n"
                     "Examples:\n"
@@ -313,10 +411,12 @@ def handle_text(phone, text):
 
     elif state == "credit_q2":
         user_ref.update({"has_bank_account": text, "state": "credit_q3"})
+        user_data_now = user_ref.get().to_dict()
+        cc = get_country(user_data_now)
         if lang == "bm":
-            send_message(phone, f"✅ Noted!\n\nSoalan 3️⃣: Adakah perniagaan awak dah *daftar SSM*?\n_(Balas: Ya / Tidak)_")
+            send_message(phone, f"✅ Noted!\n\nSoalan 3️⃣: {cc['reg_question_bm']}\n_(Balas: Ya / Tidak)_")
         else:
-            send_message(phone, f"✅ Noted!\n\nQuestion 3️⃣: Is your business *registered with SSM*?\n_(Reply: Yes / No)_")
+            send_message(phone, f"✅ Noted!\n\nQuestion 3️⃣: {cc['reg_question_en']}\n_(Reply: Yes / No)_")
 
     elif state == "content_menu":
         handle_content_menu(phone, text, user_ref)
@@ -338,6 +438,7 @@ def handle_text(phone, text):
 def smart_handle(phone, text, user_ref):
     user_data = user_ref.get().to_dict()
     lang = user_data.get("language", "bm")
+    cur = get_currency(user_data)
     text_upper = text.upper().strip()
 
     # Hard commands — no AI needed
@@ -409,9 +510,9 @@ If cannot extract amount use 0.
             }])
         })
         if lang == "bm":
-            send_message(phone, f"✅ *Jualan direkod terus!*\n\n💵 Jumlah: RM{sale['amount']}\n📦 Item: {sale['item']}\n\nTaip *MENU* untuk pilihan lain.")
+            send_message(phone, f"✅ *Jualan direkod terus!*\n\n💵 Jumlah: {cur}{sale['amount']}\n📦 Item: {sale['item']}\n\nTaip *MENU* untuk pilihan lain.")
         else:
-            send_message(phone, f"✅ *Sale recorded directly!*\n\n💵 Amount: RM{sale['amount']}\n📦 Item: {sale['item']}\n\nType *MENU* for other options.")
+            send_message(phone, f"✅ *Sale recorded directly!*\n\n💵 Amount: {cur}{sale['amount']}\n📦 Item: {sale['item']}\n\nType *MENU* for other options.")
 
     elif intent == "log_expense":
         extract_prompt = f"""
@@ -435,9 +536,9 @@ If cannot extract amount use 0.
             }])
         })
         if lang == "bm":
-            send_message(phone, f"✅ *Perbelanjaan direkod!*\n\n💸 Jumlah: RM{expense['amount']}\n📦 Item: {expense['item']}\n\nTaip *MENU* untuk pilihan lain.")
+            send_message(phone, f"✅ *Perbelanjaan direkod!*\n\n💸 Jumlah: {cur}{expense['amount']}\n📦 Item: {expense['item']}\n\nTaip *MENU* untuk pilihan lain.")
         else:
-            send_message(phone, f"✅ *Expense recorded!*\n\n💸 Amount: RM{expense['amount']}\n📦 Item: {expense['item']}\n\nType *MENU* for other options.")
+            send_message(phone, f"✅ *Expense recorded!*\n\n💸 Amount: {cur}{expense['amount']}\n📦 Item: {expense['item']}\n\nType *MENU* for other options.")
 
     elif intent == "check_score":
         show_certificate(phone, user_ref)
@@ -491,6 +592,8 @@ def handle_menu(phone, text, user_ref):
     user_data = user_ref.get().to_dict()
     name = user_data.get("owner_name", user_data.get("business_name", "Peniaga"))
     lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
 
     if t_upper in ["MENU", "HI", "HAI", "START"]:
         if lang == "bm":
@@ -500,7 +603,7 @@ def handle_menu(phone, text, user_ref):
                 "2️⃣ Jana Skor Kredit Saya\n"
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
                 "4️⃣ Hantar Gambar Resit/Bayaran\n"
-                "5️⃣ Ringkasan Jualan Saya\n\n"
+                "5️⃣ Ringkasan Jualan Saya\n"
                 "6️⃣ Jana Kandungan Media Sosial\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
@@ -516,7 +619,7 @@ def handle_menu(phone, text, user_ref):
                 "2️⃣ Generate My Credit Score\n"
                 "3️⃣ Ask Business Question (AI)\n"
                 "4️⃣ Send Receipt/Payment Photo\n"
-                "5️⃣ My Sales Summary\n\n"
+                "5️⃣ My Sales Summary\n"
                 "6️⃣ Generate Social Media Content\n\n"
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
@@ -528,9 +631,9 @@ def handle_menu(phone, text, user_ref):
     elif t_upper == "1":
         user_ref.update({"state": "log_sale"})
         if lang == "bm":
-            send_message(phone, "💰 *Rekod Jualan*\n\nCeritakan jualan awak hari ini.\n_(Contoh: Jual 10 bekas kuih dapat RM150)_")
+            send_message(phone, f"💰 *Rekod Jualan*\n\nCeritakan jualan awak hari ini.\n_(Contoh: {cc['sale_example_bm']})_")
         else:
-            send_message(phone, "💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: Sold 10 boxes of cookies for RM150)_")
+            send_message(phone, f"💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: {cc['sale_example_en']})_")
     elif t_upper == "2":
         user_ref.update({"state": "credit_q1"})
         if lang == "bm":
@@ -540,9 +643,9 @@ def handle_menu(phone, text, user_ref):
     elif t_upper == "3":
         user_ref.update({"state": "ai_chat"})
         if lang == "bm":
-            send_message(phone, "🤖 *AI Penasihat Perniagaan*\n\nTanya apa sahaja! Contoh:\n• Macam mana nak tetapkan harga?\n• Macam mana nak mohon pinjaman TEKUN?\n• Macam mana nak promosi online?\n\n_(Taip MENU untuk kembali)_")
+            send_message(phone, f"🤖 *AI Penasihat Perniagaan*\n\nTanya apa sahaja! Contoh:\n• Macam mana nak tetapkan harga?\n• Macam mana nak mohon pinjaman {cc['loan_program']}?\n• Macam mana nak promosi online?\n\n_(Taip MENU untuk kembali)_")
         else:
-            send_message(phone, "🤖 *AI Business Advisor*\n\nAsk me anything! Examples:\n• How do I set my prices?\n• How do I apply for a TEKUN loan?\n• How do I promote online?\n\n_(Type MENU to go back)_")
+            send_message(phone, f"🤖 *AI Business Advisor*\n\nAsk me anything! Examples:\n• How do I set my prices?\n• How do I apply for a {cc['loan_program']} loan?\n• How do I promote online?\n\n_(Type MENU to go back)_")
     elif t_upper == "4":
         if lang == "bm":
             send_message(phone, "📸 *Hantar Gambar Resit*\n\nHantar gambar resit atau screenshot bayaran WhatsApp awak.\nSaya akan rekod jualan awak secara automatik!\n\n_(Taip MENU untuk kembali)_")
@@ -586,6 +689,7 @@ def handle_menu(phone, text, user_ref):
 def handle_log_sale(phone, text, user_ref):
     user_data = user_ref.get().to_dict()
     lang = user_data.get("language", "bm")
+    cur = get_currency(user_data)
 
     if text.upper() == "MENU":
         user_ref.update({"state": "menu"})
@@ -615,9 +719,9 @@ def handle_log_sale(phone, text, user_ref):
     })
 
     if lang == "bm":
-        send_message(phone, f"✅ *Jualan direkod!*\n\n💵 Jumlah: RM{sale['amount']}\n📦 Item: {sale['item']}\n\nData ini disimpan untuk profil kredit awak 📊\nTaip *MENU* untuk kembali")
+        send_message(phone, f"✅ *Jualan direkod!*\n\n💵 Jumlah: {cur}{sale['amount']}\n📦 Item: {sale['item']}\n\nData ini disimpan untuk profil kredit awak 📊\nTaip *MENU* untuk kembali")
     else:
-        send_message(phone, f"✅ *Sale recorded!*\n\n💵 Amount: RM{sale['amount']}\n📦 Item: {sale['item']}\n\nThis data is saved for your credit profile 📊\nType *MENU* to go back")
+        send_message(phone, f"✅ *Sale recorded!*\n\n💵 Amount: {cur}{sale['amount']}\n📦 Item: {sale['item']}\n\nThis data is saved for your credit profile 📊\nType *MENU* to go back")
 
 # ─────────────────────────────────────
 # AI CHAT
@@ -966,6 +1070,7 @@ def show_sales_summary(phone, user_ref):
     user_data = user_ref.get().to_dict()
     sales = user_data.get("sales", [])
     lang = user_data.get("language", "bm")
+    cur = get_currency(user_data)
 
     if not sales:
         if lang == "bm":
@@ -982,16 +1087,16 @@ def show_sales_summary(phone, user_ref):
     recent = sales[-5:]
     recent_text = ""
     for s in reversed(recent):
-        recent_text += f"• RM{s.get('amount', 0)} — {s.get('item', '-')} ({s.get('date', '-')})\n"
+        recent_text += f"• {cur}{s.get('amount', 0)} — {s.get('item', '-')} ({s.get('date', '-')})\n"
 
     if lang == "bm":
         send_message(phone,
             "📊 *Ringkasan Jualan Awak*\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 Jumlah Keseluruhan: RM{total}\n"
+            f"💵 Jumlah Keseluruhan: {cur}{total}\n"
             f"🔢 Jumlah Transaksi: {count}\n"
-            f"📈 Purata Per Transaksi: RM{average:.0f}\n"
-            f"🏆 Jualan Terbesar: RM{best}\n"
+            f"📈 Purata Per Transaksi: {cur}{average:.0f}\n"
+            f"🏆 Jualan Terbesar: {cur}{best}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"📋 *5 Transaksi Terkini:*\n{recent_text}\n"
             "Taip *MENU* untuk kembali"
@@ -1000,10 +1105,10 @@ def show_sales_summary(phone, user_ref):
         send_message(phone,
             "📊 *Your Sales Summary*\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 Total Revenue: RM{total}\n"
+            f"💵 Total Revenue: {cur}{total}\n"
             f"🔢 Total Transactions: {count}\n"
-            f"📈 Average Per Transaction: RM{average:.0f}\n"
-            f"🏆 Biggest Sale: RM{best}\n"
+            f"📈 Average Per Transaction: {cur}{average:.0f}\n"
+            f"🏆 Biggest Sale: {cur}{best}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"📋 *Last 5 Transactions:*\n{recent_text}\n"
             "Type *MENU* to go back"
@@ -1015,6 +1120,8 @@ def show_sales_summary(phone, user_ref):
 def show_profile(phone, user_ref):
     user_data = user_ref.get().to_dict()
     lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
     sales = user_data.get("sales", [])
     total = sum(s.get("amount", 0) for s in sales)
     count = len(sales)
@@ -1029,12 +1136,13 @@ def show_profile(phone, user_ref):
             f"👤 Nama: {user_data.get('owner_name', '-')}\n"
             f"🏪 Perniagaan: {user_data.get('business_name', '-')}\n"
             f"📦 Produk: {user_data.get('product', '-')}\n"
+            f"🌏 Negara: {cc['flag']} {cc['name']}\n"
             f"💵 Pendapatan Bulanan: {user_data.get('monthly_revenue', '-')}\n"
             f"⏱️ Lama Beroperasi: {user_data.get('biz_age', '-')}\n"
             f"🏦 Akaun Bank: {user_data.get('has_bank_account', '-')}\n"
-            f"📝 SSM: {user_data.get('has_ssm', '-')}\n"
+            f"📝 {cc['registration']}: {user_data.get('has_ssm', '-')}\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"📊 Jumlah Jualan Direkod: RM{total}\n"
+            f"📊 Jumlah Jualan Direkod: {cur}{total}\n"
             f"🔢 Bilangan Transaksi: {count}\n"
             f"⭐ Skor Kredit: {score}\n"
             f"📅 Tarikh Skor: {score_date}\n"
@@ -1050,12 +1158,13 @@ def show_profile(phone, user_ref):
             f"👤 Name: {user_data.get('owner_name', '-')}\n"
             f"🏪 Business: {user_data.get('business_name', '-')}\n"
             f"📦 Product: {user_data.get('product', '-')}\n"
+            f"🌏 Country: {cc['flag']} {cc['name']}\n"
             f"💵 Monthly Income: {user_data.get('monthly_revenue', '-')}\n"
             f"⏱️ Years Operating: {user_data.get('biz_age', '-')}\n"
             f"🏦 Bank Account: {user_data.get('has_bank_account', '-')}\n"
-            f"📝 SSM Registered: {user_data.get('has_ssm', '-')}\n"
+            f"📝 {cc['registration']}: {user_data.get('has_ssm', '-')}\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"📊 Total Recorded Sales: RM{total}\n"
+            f"📊 Total Recorded Sales: {cur}{total}\n"
             f"🔢 Number of Transactions: {count}\n"
             f"⭐ Credit Score: {score}\n"
             f"📅 Score Date: {score_date}\n"
@@ -1186,9 +1295,9 @@ def handle_image(phone, image_id):
             }])
         })
         if lang == "bm":
-            send_message(phone, f"✅ *Bayaran direkod dari gambar!*\n\n💵 Jumlah: RM{data['amount']}\n📦 Item: {data.get('item', 'Jualan')}\n\nTaip *MENU* untuk kembali")
+            send_message(phone, f"✅ *Bayaran direkod dari gambar!*\n\n💵 Jumlah: {get_currency(user_data)}{data['amount']}\n📦 Item: {data.get('item', 'Jualan')}\n\nTaip *MENU* untuk kembali")
         else:
-            send_message(phone, f"✅ *Payment recorded from image!*\n\n💵 Amount: RM{data['amount']}\n📦 Item: {data.get('item', 'Sale')}\n\nType *MENU* to go back")
+            send_message(phone, f"✅ *Payment recorded from image!*\n\n💵 Amount: {get_currency(user_data)}{data['amount']}\n📦 Item: {data.get('item', 'Sale')}\n\nType *MENU* to go back")
     else:
         if lang == "bm":
             send_message(phone, "Saya tidak dapat mengesan bayaran dalam gambar ini.\nCuba hantar screenshot yang lebih jelas.\n\nTaip *MENU* untuk kembali")
@@ -1201,6 +1310,8 @@ def handle_image(phone, image_id):
 def show_loan_checklist(phone, user_ref):
     user_data = user_ref.get().to_dict()
     lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
     sales = user_data.get("sales", [])
     
     # Check each criteria
@@ -1224,6 +1335,7 @@ def show_loan_checklist(phone, user_ref):
             except:
                 has_30days = False
 
+    reg = cc["registration"]
     checks = [
         (has_profile, 
          "Profil perniagaan wujud" if lang=="bm" else "Business profile created",
@@ -1241,8 +1353,8 @@ def show_loan_checklist(phone, user_ref):
          "Ada akaun bank perniagaan" if lang=="bm" else "Has business bank account",
          "Buka akaun bank perniagaan" if lang=="bm" else "Open a business bank account"),
         (has_ssm,
-         "Berdaftar SSM" if lang=="bm" else "SSM registered",
-         "Daftar SSM di ssm.com.my" if lang=="bm" else "Register at ssm.com.my"),
+         f"Berdaftar {reg}" if lang=="bm" else f"{reg} registered",
+         f"Daftar {reg} di {cc['reg_url']}" if lang=="bm" else f"Register at {cc['reg_url']}"),
         (has_score,
          f"Skor kredit 60+ (kini: {user_data.get('credit_score','?')})" if lang=="bm" else f"Credit score 60+ (now: {user_data.get('credit_score','?')})",
          "Jana skor kredit → pilih 2" if lang=="bm" else "Generate credit score → choose 2"),
@@ -1263,8 +1375,9 @@ def show_loan_checklist(phone, user_ref):
         else:
             lines += f"⬜ {label}\n    ↳ {action}\n"
 
+    loan = cc["loan_program"]
     if pct == 100:
-        status = "🎉 TAHNIAH! Awak layak mohon pinjaman TEKUN!" if lang=="bm" else "🎉 CONGRATULATIONS! You qualify for a TEKUN loan!"
+        status = f"🎉 TAHNIAH! Awak layak mohon pinjaman {loan}!" if lang=="bm" else f"🎉 CONGRATULATIONS! You qualify for a {loan} loan!"
     elif pct >= 70:
         status = f"🔥 Hampir layak! Siapkan {total-done} lagi syarat." if lang=="bm" else f"🔥 Almost there! Complete {total-done} more requirements."
     elif pct >= 40:
@@ -1274,27 +1387,27 @@ def show_loan_checklist(phone, user_ref):
 
     if lang == "bm":
         send_message(phone,
-            "🏦 *SENARAI SEMAK PINJAMAN TEKUN*\n\n"
+            f"🏦 *SENARAI SEMAK PINJAMAN {loan.upper()}*\n\n"
             f"Kemajuan: [{bar}] {pct}%\n"
             f"({done}/{total} syarat dipenuhi)\n\n"
             f"{lines}\n"
             f"{status}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "💡 TEKUN loan: sehingga RM50,000\n"
-            "💡 Faedah rendah: 4% setahun\n"
+            f"💡 {loan}: sehingga {cc['loan_amount']}\n"
+            f"💡 Faedah rendah: {cc['loan_rate']} setahun\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "Taip *MENU* untuk kembali"
         )
     else:
         send_message(phone,
-            "🏦 *TEKUN LOAN READINESS CHECKLIST*\n\n"
+            f"🏦 *{loan.upper()} LOAN READINESS CHECKLIST*\n\n"
             f"Progress: [{bar}] {pct}%\n"
             f"({done}/{total} requirements met)\n\n"
             f"{lines}\n"
             f"{status}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "💡 TEKUN loan: up to RM50,000\n"
-            "💡 Low interest: 4% per year\n"
+            f"💡 {loan}: up to {cc['loan_amount']}\n"
+            f"💡 Low interest: {cc['loan_rate']} per year\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "Type *MENU* to go back"
         )
