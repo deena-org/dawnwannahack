@@ -4,7 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#0d1117"/>
-<title>BizBuddy</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="NeuralCredit"/>
+<title>NeuralCredit</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -359,14 +363,14 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 
 <!-- LOADING -->
 <div id="loading">
-  <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#00d4aa,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">BizBuddy</div>
+  <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#00d4aa,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">NeuralCredit</div>
   <div class="loader-ring"></div>
   <div style="font-size:13px;color:#5a6785;">Loading dashboard...</div>
 </div>
 
 <!-- LOGIN -->
 <div id="login-screen" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:24px;">
-  <div class="login-logo">BizBuddy</div>
+  <div class="login-logo">NeuralCredit</div>
   <div style="text-align:center;color:#5a6785;font-size:14px;">Financial Identity for Every Entrepreneur</div>
   <div class="login-card">
     <h2>Access Dashboard</h2>
@@ -401,7 +405,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
   </div>
 
   <nav class="topnav">
-    <div class="nav-logo">BizBuddy</div>
+    <div class="nav-logo">NeuralCredit</div>
     <div class="nav-right">
       <div class="view-toggle" id="view-toggle" style="display:none;">
         <button class="vtbtn active" onclick="switchView('mobile')" id="vt-mobile">📊 My Dashboard</button>
@@ -491,7 +495,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
     <div class="loan-cta-card fade-up fade-up-2" id="loan-cta-card">
       <div class="loan-cta-icon">🎉</div>
       <div class="loan-cta-title" data-i18n="prequal_title">You're Pre-Qualified!</div>
-      <div class="loan-cta-desc" id="loan-cta-desc" data-i18n="prequal_desc">Your BizBuddy credit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.</div>
+      <div class="loan-cta-desc" id="loan-cta-desc" data-i18n="prequal_desc">Your NeuralCredit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.</div>
       <button class="loan-cta-btn" onclick="openPrequalModal()" data-i18n="request_assessment">📋 Request Loan Assessment</button>
     </div>
 
@@ -551,7 +555,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
   <!-- DESKTOP / BANK VIEW -->
   <div id="desktop-view" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);">BizBuddy Bank Dashboard</div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);">NeuralCredit Bank Dashboard</div>
       <button onclick="exportPDF()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:9px 18px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
         📄 Export Report
       </button>
@@ -722,7 +726,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         ✅ <span data-i18n="pq_item1">Business name & owner name</span><br>
         ✅ <span data-i18n="pq_item2">Credit score & breakdown</span><br>
         ✅ <span data-i18n="pq_item3">Revenue history & verification rate</span><br>
-        ✅ <span data-i18n="pq_item4">BizBuddy certificate ID</span>
+        ✅ <span data-i18n="pq_item4">NeuralCredit certificate ID</span>
       </div>
     </div>
     <button class="prequal-wa-btn" id="pq-wa-btn" onclick="submitPrequal()">
@@ -1136,7 +1140,7 @@ function buildSalesList(sales) {
         <div class="empty-hero-icon">🚀</div>
         <h3>${t('empty_title')}</h3>
         <p>${t('empty_desc')}</p>
-        <a href="https://wa.me/15556648532?text=Hi%20BizBuddy!%20I%20want%20to%20log%20my%20first%20sale" target="_blank" class="empty-hero-cta">
+        <a href="https://wa.me/15556648532?text=Hi%20NeuralCredit!%20I%20want%20to%20log%20my%20first%20sale" target="_blank" class="empty-hero-cta">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L0 24l6.335-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 01-5.031-1.388l-.361-.214-3.741.981.999-3.648-.235-.374A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
           ${t('empty_cta')}
         </a>
@@ -1188,7 +1192,7 @@ const translations = {
     score_breakdown: 'Score Breakdown',
     ai_scored: 'AI Scored',
     prequal_title: "You're Pre-Qualified!",
-    prequal_desc: 'Your BizBuddy credit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.',
+    prequal_desc: 'Your NeuralCredit score meets the threshold for micro-loan assessment. Review your details and submit to a partner bank.',
     request_assessment: '📋 Request Loan Assessment',
     prequal_modal_title: 'Loan Pre-Qualification',
     prequal_modal_sub: 'Review your details before submitting to the bank',
@@ -1198,7 +1202,7 @@ const translations = {
     pq_item1: 'Business name & owner name',
     pq_item2: 'Credit score & breakdown',
     pq_item3: 'Revenue history & verification rate',
-    pq_item4: 'BizBuddy credit certificate ID',
+    pq_item4: 'NeuralCredit certificate ID',
     send_to_bank: 'Send to Partner Bank via WhatsApp',
     pq_note: 'Your data is protected under PDPA Malaysia. The bank will contact you within 2-3 business days.',
     share_score: 'Share Credit Score via WhatsApp',
@@ -1253,7 +1257,7 @@ const translations = {
     score_breakdown: 'Pecahan Skor',
     ai_scored: 'Skor AI',
     prequal_title: 'Anda Layak!',
-    prequal_desc: 'Skor BizBuddy anda memenuhi syarat untuk penilaian pinjaman mikro. Semak butiran anda dan hantar kepada bank rakan kongsi.',
+    prequal_desc: 'Skor NeuralCredit anda memenuhi syarat untuk penilaian pinjaman mikro. Semak butiran anda dan hantar kepada bank rakan kongsi.',
     request_assessment: '📋 Mohon Penilaian Pinjaman',
     prequal_modal_title: 'Pra-Kelayakan Pinjaman',
     prequal_modal_sub: 'Semak butiran anda sebelum menghantar kepada bank',
@@ -1263,7 +1267,7 @@ const translations = {
     pq_item1: 'Nama perniagaan & nama pemilik',
     pq_item2: 'Skor kredit & pecahan',
     pq_item3: 'Sejarah pendapatan & kadar pengesahan',
-    pq_item4: 'ID sijil BizBuddy',
+    pq_item4: 'ID sijil NeuralCredit',
     send_to_bank: 'Hantar kepada Bank via WhatsApp',
     pq_note: 'Data anda dilindungi di bawah PDPA Malaysia. Bank akan menghubungi anda dalam 2-3 hari bekerja.',
     share_score: 'Kongsi Skor Kredit via WhatsApp',
@@ -1475,13 +1479,13 @@ window.submitPrequal = () => {
   const certDate = currentUser.score_date || new Date().toISOString().split('T')[0];
   const certId = `NC-${(currentUser.phone||'0000').slice(-4)}-${certDate.replace(/-/g,'')}`;
 
-  const msg = `🏦 *BizBuddy — Loan Pre-Qualification*\n\n` +
+  const msg = `🏦 *NeuralCredit — Loan Pre-Qualification*\n\n` +
     `👤 *${name}* · ${biz}\n` +
     `⭐ Credit Score: *${score}/100*\n` +
     `💰 Total Revenue: *RM${total.toLocaleString()}*\n` +
     `📦 Transactions: *${sales.length}* (${verifiedPct}% verified)\n` +
     `🆔 Certificate: *${certId}*\n\n` +
-    `✅ This MSME has been pre-qualified by BizBuddy AI scoring.\n` +
+    `✅ This MSME has been pre-qualified by NeuralCredit AI scoring.\n` +
     `📞 Contact: +${currentUser.phone}\n\n` +
     `🔒 Data shared with consent under PDPA Malaysia.`;
 
@@ -1574,7 +1578,7 @@ window.downloadCertificate = async () => {
       logging: false,
     });
     const link = document.createElement('a');
-    link.download = 'BizBuddy-Certificate.png';
+    link.download = 'NeuralCredit-Certificate.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   } catch(e) { console.error(e); alert('Failed to generate image.'); }
@@ -1808,7 +1812,7 @@ window.shareViaWhatsApp = () => {
   else if (score > 0) { status = 'Building 📈'; emoji = '🚀'; }
   else { status = 'Not yet scored'; emoji = '⏳'; }
 
-  const msg = `${emoji} *BizBuddy Credit Score Update!*
+  const msg = `${emoji} *NeuralCredit Score Update!*
 
 ` +
     `👤 ${name} · ${biz}
@@ -1818,7 +1822,7 @@ window.shareViaWhatsApp = () => {
     `📊 Status: *${status}*
 
 ` +
-    `💡 Track your business finances & build credit history with BizBuddy!
+    `💡 Track your business finances & build credit history with NeuralCredit!
 ` +
     `👉 wa.me/15556648532`;
 
@@ -1847,10 +1851,10 @@ window.exportPDF = () => {
       <td style="padding:8px 12px;">${status}</td>
     </tr>`;
   }).join('');
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>BizBuddy Portfolio Report</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NeuralCredit Portfolio Report</title>
 <style>body{font-family:Arial,sans-serif;padding:40px;color:#1a2234;}h1{color:#00b894;font-size:24px;margin-bottom:4px;}.subtitle{color:#7a8aaa;font-size:13px;margin-bottom:32px;}.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:32px;}.stat{background:#f0f4f8;border-radius:12px;padding:16px;border-left:4px solid #00b894;}.stat-val{font-size:28px;font-weight:800;}.stat-label{font-size:12px;color:#7a8aaa;margin-top:4px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#f0f4f8;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#7a8aaa;}.footer{margin-top:40px;font-size:11px;color:#7a8aaa;text-align:center;border-top:1px solid #eee;padding-top:16px;}</style>
 </head><body>
-<h1>BizBuddy</h1><div class="subtitle">Portfolio Report — Generated ${date}</div>
+<h1>NeuralCredit</h1><div class="subtitle">Portfolio Report — Generated ${date}</div>
 <div class="stats">
   <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total MSMEs</div></div>
   <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">Loan Ready (70+)</div></div>
@@ -1859,7 +1863,7 @@ window.exportPDF = () => {
 </div>
 <table><thead><tr><th>Name</th><th>Business</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
 <tbody>${rows}</tbody></table>
-<div class="footer">Powered by BizBuddy AI · Confidential Portfolio Report · ${date}</div>
+<div class="footer">Powered by NeuralCredit AI · Confidential Portfolio Report · ${date}</div>
 </body></html>`;
   const win = window.open('', '_blank');
   win.document.write(html);
@@ -1942,6 +1946,16 @@ function drawMalaysiaMap(users) {
   canvas.onmouseleave=()=>{ tooltip.style.display='none'; };
 }
 window.drawMalaysiaMap=drawMalaysiaMap;
+</script>
+<script>
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>

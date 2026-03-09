@@ -229,6 +229,16 @@ def handle_text(phone, text):
         show_stored_data(phone, user_ref)
         return
 
+    # BREAKDOWN command — show score breakdown anytime
+    if text_upper in ["BREAKDOWN", "PECAHAN"]:
+        show_score_breakdown(phone, user_ref)
+        return
+
+    # RUJUK/REFER command — loan referral
+    if text_upper in ["RUJUK", "REFER"]:
+        show_loan_referral(phone, user_ref)
+        return
+
     # Onboarding states
     if state == "ask_consent":
         if text_upper in ["SETUJU", "AGREE", "YES", "YA", "OK"]:
@@ -391,7 +401,7 @@ def handle_text(phone, text):
                 )
         else:
             # Route menu numbers directly, smart_handle for natural language
-            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA"]:
+            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER"]:
                 handle_menu(phone, text, user_ref)
             else:
                 smart_handle(phone, text, user_ref)
@@ -459,6 +469,12 @@ def smart_handle(phone, text, user_ref):
         return
     if text_upper == "DATA":
         show_stored_data(phone, user_ref)
+        return
+    if text_upper in ["BREAKDOWN", "PECAHAN"]:
+        show_score_breakdown(phone, user_ref)
+        return
+    if text_upper in ["RUJUK", "REFER"]:
+        show_loan_referral(phone, user_ref)
         return
     if text_upper == "RESET":
         user_ref.delete()
@@ -607,8 +623,10 @@ def handle_menu(phone, text, user_ref):
                 "6️⃣ Jana Kandungan Media Sosial\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
+                "💡 Taip *PECAHAN* untuk pecahan skor\n"
+                "💡 Taip *PINJAMAN* untuk semak kelayakan\n"
+                "💡 Taip *RUJUK* untuk rujukan pinjaman\n"
                 "💡 Taip *ENGLISH* untuk tukar bahasa\n"
-                "💡 Taip *PINJAMAN* untuk semak kelayakan pinjaman\n"
                 "🔒 Taip *DATA* untuk lihat data yang disimpan\n\n"
                 "_Balas dengan nombor pilihan_"
             )
@@ -623,8 +641,10 @@ def handle_menu(phone, text, user_ref):
                 "6️⃣ Generate Social Media Content\n\n"
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
+                "💡 Type *BREAKDOWN* for score breakdown\n"
+                "💡 Type *LOAN* to check eligibility\n"
+                "💡 Type *REFER* for loan referral\n"
                 "💡 Type *BM* to switch to Bahasa Malaysia\n"
-                "💡 Type *LOAN* to check loan eligibility\n"
                 "🔒 Type *DATA* to view your stored data\n\n"
                 "_Reply with your choice number_"
             )
@@ -1069,20 +1089,34 @@ LANGKAH 3: [third improvement]
 def show_sales_summary(phone, user_ref):
     user_data = user_ref.get().to_dict()
     sales = user_data.get("sales", [])
+    expenses = user_data.get("expenses", [])
     lang = user_data.get("language", "bm")
     cur = get_currency(user_data)
 
-    if not sales:
+    if not sales and not expenses:
         if lang == "bm":
             send_message(phone, "📊 *Ringkasan Jualan*\n\nAwak belum rekod sebarang jualan lagi.\nTaip *1* untuk rekod jualan pertama awak!\n\nTaip *MENU* untuk kembali")
         else:
             send_message(phone, "📊 *Sales Summary*\n\nYou haven't recorded any sales yet.\nType *1* to record your first sale!\n\nType *MENU* to go back")
         return
 
-    total = sum(s.get("amount", 0) for s in sales)
+    total_sales = sum(s.get("amount", 0) for s in sales)
+    total_expenses = sum(e.get("amount", 0) for e in expenses)
+    profit = total_sales - total_expenses
+    margin = round((profit / total_sales) * 100) if total_sales > 0 else 0
     count = len(sales)
-    average = total / count if count > 0 else 0
-    best = max(s.get("amount", 0) for s in sales)
+    average = total_sales / count if count > 0 else 0
+    best = max(s.get("amount", 0) for s in sales) if sales else 0
+
+    # Profit health indicator
+    if margin >= 50:
+        health = "🟢 Sihat" if lang == "bm" else "🟢 Healthy"
+    elif margin >= 20:
+        health = "🟡 Sederhana" if lang == "bm" else "🟡 Moderate"
+    elif margin > 0:
+        health = "🔴 Rendah" if lang == "bm" else "🔴 Low"
+    else:
+        health = "⚠️ Rugi" if lang == "bm" else "⚠️ Loss"
 
     recent = sales[-5:]
     recent_text = ""
@@ -1091,26 +1125,38 @@ def show_sales_summary(phone, user_ref):
 
     if lang == "bm":
         send_message(phone,
-            "📊 *Ringkasan Jualan Awak*\n\n"
+            "📊 *Ringkasan Kewangan Awak*\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 Jumlah Keseluruhan: {cur}{total}\n"
+            f"💵 Jumlah Jualan: {cur}{total_sales}\n"
+            f"💸 Jumlah Perbelanjaan: {cur}{total_expenses}\n"
+            f"📈 *Keuntungan: {cur}{profit}*\n"
+            f"📊 Margin Keuntungan: {margin}% {health}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
             f"🔢 Jumlah Transaksi: {count}\n"
             f"📈 Purata Per Transaksi: {cur}{average:.0f}\n"
             f"🏆 Jualan Terbesar: {cur}{best}\n"
+            f"📦 Rekod Perbelanjaan: {len(expenses)}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"📋 *5 Transaksi Terkini:*\n{recent_text}\n"
+            f"📋 *5 Jualan Terkini:*\n{recent_text}\n"
+            "💡 _Rekod perbelanjaan dengan taip: beli bahan rm50_\n"
             "Taip *MENU* untuk kembali"
         )
     else:
         send_message(phone,
-            "📊 *Your Sales Summary*\n\n"
+            "📊 *Your Financial Summary*\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 Total Revenue: {cur}{total}\n"
-            f"🔢 Total Transactions: {count}\n"
-            f"📈 Average Per Transaction: {cur}{average:.0f}\n"
+            f"💵 Total Sales: {cur}{total_sales}\n"
+            f"💸 Total Expenses: {cur}{total_expenses}\n"
+            f"📈 *Profit: {cur}{profit}*\n"
+            f"📊 Profit Margin: {margin}% {health}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔢 Transactions: {count}\n"
+            f"📈 Average Per Sale: {cur}{average:.0f}\n"
             f"🏆 Biggest Sale: {cur}{best}\n"
+            f"📦 Expense Records: {len(expenses)}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"📋 *Last 5 Transactions:*\n{recent_text}\n"
+            f"📋 *Last 5 Sales:*\n{recent_text}\n"
+            "💡 _Track expenses by typing: bought supplies rm50_\n"
             "Type *MENU* to go back"
         )
 
@@ -1621,6 +1667,197 @@ Include ideas relevant to Malaysian culture (Raya, Ramadan, Merdeka, etc if appl
             "5️⃣ Promotion Ideas\n\n"
             "_(Type MENU to go back)_"
         )
+# ─────────────────────────────────────
+# SCORE BREAKDOWN (standalone view)
+# ─────────────────────────────────────
+def show_score_breakdown(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    score = user_data.get("credit_score", 0)
+    breakdown = user_data.get("score_breakdown", {})
+
+    if not score or not breakdown:
+        if lang == "bm":
+            send_message(phone, "⚠️ Awak belum jana skor kredit lagi.\nTaip *MENU* → pilih *2* untuk jana skor kredit dahulu.")
+        else:
+            send_message(phone, "⚠️ You haven't generated a credit score yet.\nType *MENU* → choose *2* to generate your score first.")
+        return
+
+    # Find weakest area
+    categories = {
+        "consistency": {"max": 25, "bm": "Konsistensi Jualan", "en": "Sales Consistency"},
+        "revenue": {"max": 20, "bm": "Kekuatan Hasil", "en": "Revenue Strength"},
+        "age": {"max": 15, "bm": "Umur Perniagaan", "en": "Business Age"},
+        "formalization": {"max": 20, "bm": f"Formalisasi ({cc['registration']})", "en": f"Formalization ({cc['registration']})"},
+        "volume": {"max": 10, "bm": "Jumlah Rekod", "en": "Record Volume"},
+        "expenses": {"max": 10, "bm": "Disiplin Perbelanjaan", "en": "Expense Discipline"},
+    }
+
+    # Build visual bars
+    lines = ""
+    weakest_key = None
+    weakest_pct = 100
+    for key, info in categories.items():
+        val = breakdown.get(key, 0)
+        mx = info["max"]
+        pct = round((val / mx) * 100) if mx > 0 else 0
+        filled = round(pct / 10)
+        bar = "█" * filled + "░" * (10 - filled)
+        label = info["bm"] if lang == "bm" else info["en"]
+        lines += f"  {label}\n  [{bar}] {val}/{mx}\n\n"
+        if pct < weakest_pct:
+            weakest_pct = pct
+            weakest_key = key
+
+    weakest_label = categories[weakest_key]["bm" if lang == "bm" else "en"] if weakest_key else ""
+
+    if lang == "bm":
+        send_message(phone,
+            f"📊 *PECAHAN SKOR KREDIT*\n\n"
+            f"Skor Keseluruhan: *{score}/100*\n\n"
+            f"{lines}"
+            f"⚡ *Fokus tingkatkan:* {weakest_label}\n\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            f"📊 *CREDIT SCORE BREAKDOWN*\n\n"
+            f"Overall Score: *{score}/100*\n\n"
+            f"{lines}"
+            f"⚡ *Focus on improving:* {weakest_label}\n\n"
+            "Type *MENU* to go back"
+        )
+
+# ─────────────────────────────────────
+# LOAN REFERRAL PIPELINE
+# ─────────────────────────────────────
+def show_loan_referral(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
+    score = user_data.get("credit_score", 0)
+
+    if not score or score < 60:
+        needed = 60 - (score or 0)
+        if lang == "bm":
+            send_message(phone,
+                f"⚠️ *Skor kredit awak belum mencukupi untuk rujukan pinjaman.*\n\n"
+                f"Skor semasa: {score or 0}/100\n"
+                f"Skor minimum: 60/100\n"
+                f"Perlukan: +{needed} lagi mata\n\n"
+                "💡 Cara tingkatkan skor:\n"
+                "• Rekod lebih banyak jualan setiap hari\n"
+                "• Rekod perbelanjaan awak\n"
+                f"• Daftar {cc['registration']} jika belum\n"
+                "• Buka akaun bank perniagaan\n\n"
+                "Taip *PECAHAN* untuk lihat pecahan skor\n"
+                "Taip *MENU* untuk kembali"
+            )
+        else:
+            send_message(phone,
+                f"⚠️ *Your credit score is not yet sufficient for loan referral.*\n\n"
+                f"Current score: {score or 0}/100\n"
+                f"Minimum required: 60/100\n"
+                f"Need: +{needed} more points\n\n"
+                "💡 How to improve:\n"
+                "• Record more sales daily\n"
+                "• Track your expenses\n"
+                f"• Register with {cc['registration']} if not done\n"
+                "• Open a business bank account\n\n"
+                "Type *BREAKDOWN* to see score details\n"
+                "Type *MENU* to go back"
+            )
+        return
+
+    # Generate referral message
+    owner = user_data.get("owner_name", "-")
+    biz = user_data.get("business_name", "-")
+    product = user_data.get("product", "-")
+    revenue = user_data.get("monthly_revenue", "-")
+    sales = user_data.get("sales", [])
+    total_sales = sum(s.get("amount", 0) for s in sales)
+    txn_count = len(sales)
+    score_date = user_data.get("score_date", "-")
+    cert_id = f"NC-{phone[-4:]}-{score_date.replace('-', '')}"
+    loan = cc["loan_program"]
+
+    referral_msg = (
+        f"📋 PERMOHONAN PENILAIAN PINJAMAN\n"
+        f"{'='*35}\n\n"
+        f"Kepada: Pegawai {loan}\n\n"
+        f"Saya ingin memohon penilaian pinjaman mikro.\n\n"
+        f"MAKLUMAT PEMOHON:\n"
+        f"• Nama: {owner}\n"
+        f"• Perniagaan: {biz}\n"
+        f"• Produk/Perkhidmatan: {product}\n"
+        f"• Pendapatan Bulanan: {revenue}\n"
+        f"• Negara: {cc['flag']} {cc['name']}\n\n"
+        f"REKOD KEWANGAN (BizBuddy):\n"
+        f"• Jumlah Jualan Direkod: {cur}{total_sales}\n"
+        f"• Bilangan Transaksi: {txn_count}\n"
+        f"• Skor Kredit BizBuddy: {score}/100\n"
+        f"• ID Sijil: {cert_id}\n"
+        f"• Tarikh Skor: {score_date}\n\n"
+        f"Skor ini dijana oleh BizBuddy AI berdasarkan 6 kriteria yang telus.\n\n"
+        f"Terima kasih.\n"
+        f"{'='*35}\n"
+        f"Powered by BizBuddy | bizbuddy.my"
+    ) if lang == "bm" else (
+        f"📋 LOAN ASSESSMENT REQUEST\n"
+        f"{'='*35}\n\n"
+        f"To: {loan} Officer\n\n"
+        f"I would like to request a micro-loan assessment.\n\n"
+        f"APPLICANT INFO:\n"
+        f"• Name: {owner}\n"
+        f"• Business: {biz}\n"
+        f"• Product/Service: {product}\n"
+        f"• Monthly Income: {revenue}\n"
+        f"• Country: {cc['flag']} {cc['name']}\n\n"
+        f"FINANCIAL RECORDS (BizBuddy):\n"
+        f"• Total Recorded Sales: {cur}{total_sales}\n"
+        f"• Number of Transactions: {txn_count}\n"
+        f"• BizBuddy Credit Score: {score}/100\n"
+        f"• Certificate ID: {cert_id}\n"
+        f"• Score Date: {score_date}\n\n"
+        f"This score was generated by BizBuddy AI based on 6 transparent criteria.\n\n"
+        f"Thank you.\n"
+        f"{'='*35}\n"
+        f"Powered by BizBuddy | bizbuddy.my"
+    )
+
+    if lang == "bm":
+        send_message(phone,
+            "🏦 *RUJUKAN PINJAMAN SEDIA!*\n\n"
+            "Mesej berikut telah dijana untuk awak.\n"
+            f"📋 *Copy dan hantar* kepada pegawai {loan}:\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{referral_msg}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "📱 *Langkah seterusnya:*\n"
+            "1. Screenshot mesej di atas\n"
+            f"2. Hantar ke pejabat {loan} terdekat\n"
+            "3. Atau email ke pegawai pinjaman\n\n"
+            "Taip *SIJIL* untuk sijil kredit awak\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            "🏦 *LOAN REFERRAL READY!*\n\n"
+            "The following message has been generated for you.\n"
+            f"📋 *Copy and send* to a {loan} officer:\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{referral_msg}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "📱 *Next steps:*\n"
+            "1. Screenshot the message above\n"
+            f"2. Send to your nearest {loan} office\n"
+            "3. Or email to a loan officer\n\n"
+            "Type *CERTIFICATE* for your credit certificate\n"
+            "Type *MENU* to go back"
+        )
+
 # ─────────────────────────────────────
 # SEND MESSAGE
 # ─────────────────────────────────────
