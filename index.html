@@ -895,7 +895,7 @@ function updateLastUpdated() {
   el.textContent = 'Updated ' + now.toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
 }
 
-setInterval(() => { if (document.getElementById('app').style.display !== 'none') window.refreshData(); }, 60000);
+// Auto-refresh removed — only refresh on login, manual refresh button, or pull-to-refresh
 
 window.toggleTheme = () => {
   const isLight = document.body.classList.toggle('light-mode');
@@ -1100,20 +1100,19 @@ function buildSalesChart(sales, period) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 10 }, maxRotation:45, autoSkip:true, maxTicksLimit:10 } },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => getCur(currentUser)+v } }
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => (currentUser ? getCur(currentUser) : 'RM')+v } }
       }
     }
   });
 }
 
 function buildRoadmap(user, sales) {
-  const reg = getReg(user);
   const items = [
     { done: !!(user.owner_name), label: t('profile_created'), desc: t('profile_desc') },
     { done: sales.length > 0, label: t('first_sale'), desc: t('first_sale_desc') },
     { done: sales.length >= 10, label: t('ten_txn'), desc: `${sales.length}/10 ${t('transactions').toLowerCase()}` },
     { done: !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y')), label: t('bank_account'), desc: t('bank_desc') },
-    { done: !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y')), label: reg + ' ' + t('biz_registration'), desc: t('ssm_desc') },
+    { done: !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y')), label: t('ssm_reg'), desc: t('ssm_desc') },
     { done: (user.credit_score||0) >= 60, label: t('score_60'), desc: `${t('credit_score_label')}: ${user.credit_score || '—'}` },
   ];
 
@@ -1155,7 +1154,7 @@ function buildSalesList(sales) {
         <div class="sale-item-name">${s.item || 'Sale'}</div>
         <div class="sale-date">${s.date || '—'} ${s.source === 'screenshot' ? '📸' : '💬'}</div>
       </div>
-      <div class="sale-amount">RM${(s.amount||0).toLocaleString()}</div>
+      <div class="sale-amount">${getCur(currentUser)}${(s.amount||0).toLocaleString()}</div>
     </div>
   `).join('');
 }
@@ -1178,16 +1177,6 @@ function buildCertificate(user, score) {
 // ── BILINGUAL SYSTEM (EN / BM) ──
 // ══════════════════════════════════════════════
 let currentLang = localStorage.getItem('nc-lang') || 'en';
-
-// ASEAN Country Config — matches app.py COUNTRY_CONFIG
-const COUNTRY_CONFIG = {
-  MY: { currency: 'RM', registration: 'SSM', loan: 'TEKUN', flag: '🇲🇾', name: 'Malaysia' },
-  ID: { currency: 'Rp', registration: 'NIB', loan: 'KUR', flag: '🇮🇩', name: 'Indonesia' },
-  PH: { currency: '₱', registration: 'DTI', loan: 'SB Corp', flag: '🇵🇭', name: 'Philippines' },
-};
-function getUserCountry(user) { return COUNTRY_CONFIG[user?.country || 'MY'] || COUNTRY_CONFIG.MY; }
-function getCur(user) { return getUserCountry(user).currency; }
-function getReg(user) { return getUserCountry(user).registration; }
 
 const translations = {
   en: {
@@ -1243,9 +1232,8 @@ const translations = {
     rev_volume: 'Revenue Volume',
     biz_registration: 'Business Registration',
     bank_linked: 'Bank Account Linked',
-    txn_frequency: 'Record Volume',
+    txn_frequency: 'Transaction Frequency',
     biz_age: 'Business Age',
-    expense_discipline: 'Expense Discipline',
     empty_title: "Let's get started!",
     empty_desc: 'Log your first sale via WhatsApp to see your dashboard come alive. Every transaction builds your credit history.',
     empty_cta: 'Log First Sale via WhatsApp',
@@ -1309,9 +1297,8 @@ const translations = {
     rev_volume: 'Jumlah Pendapatan',
     biz_registration: 'Pendaftaran Perniagaan',
     bank_linked: 'Akaun Bank Disambung',
-    txn_frequency: 'Jumlah Rekod',
+    txn_frequency: 'Kekerapan Transaksi',
     biz_age: 'Usia Perniagaan',
-    expense_discipline: 'Disiplin Perbelanjaan',
     empty_title: 'Jom mula!',
     empty_desc: 'Rekod jualan pertama anda melalui WhatsApp untuk melihat papan pemuka anda. Setiap transaksi membina sejarah kredit anda.',
     empty_cta: 'Rekod Jualan Pertama via WhatsApp',
@@ -1347,16 +1334,9 @@ window.toggleLang = () => {
   currentLang = currentLang === 'en' ? 'bm' : 'en';
   localStorage.setItem('nc-lang', currentLang);
   applyTranslations();
-  // Update drawer language button label
-  const langLabel = document.getElementById('drawer-lang-label');
-  if (langLabel) langLabel.textContent = currentLang === 'en' ? 'Bahasa Melayu' : 'English';
   // Re-render dynamic content if user is loaded
   if (currentUser) {
     loadMobileView(currentUser);
-  }
-  // Re-render bank view if visible
-  if (allUsers.length > 0 && document.getElementById('desktop-view').style.display !== 'none') {
-    renderBankView(allUsers);
   }
 };
 
@@ -1380,68 +1360,67 @@ function buildScoreBreakdown(user, sales) {
   }
   card.style.display = 'block';
 
-  const bd = user.score_breakdown || {};
-  const reg = getReg(user);
-  const cur = getCur(user);
+  const count = sales.length;
   const total = sales.reduce((s,x) => s + (x.amount||0), 0);
+  const hasSSM = !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y'));
+  const hasBank = !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y'));
 
-  // Use REAL breakdown from Firebase (matches app.py calculate_credit_score)
+  // Calculate factor scores (these simulate the AI scoring weights)
   const factors = [
     {
-      icon: '📊', key: 'txn_consistency', max: 25,
-      value: bd.consistency || 0,
+      icon: '📊', key: 'txn_consistency', weight: 25,
+      value: Math.min(100, count >= 10 ? 90 + Math.min(10, (count-10)*0.5) : count * 9),
       color: '#00d4aa',
-      sub: sales.length + ' ' + t('transactions').toLowerCase()
+      sub: count >= 10 ? count + ' transactions ✓' : count + '/10 ' + t('transactions').toLowerCase()
     },
     {
-      icon: '💰', key: 'rev_volume', max: 20,
-      value: bd.revenue || 0,
+      icon: '💰', key: 'rev_volume', weight: 20,
+      value: Math.min(100, total >= 5000 ? 85 + Math.min(15, (total-5000)/1000) : (total/5000)*85),
       color: '#6c63ff',
-      sub: cur + total.toLocaleString()
+      sub: getCur(user) + total.toLocaleString()
     },
     {
-      icon: '📅', key: 'biz_age', max: 15,
-      value: bd.age || 0,
-      color: '#a29bfe',
-      sub: user.biz_age || '—'
-    },
-    {
-      icon: '📋', key: 'biz_registration', max: 20,
-      value: bd.formalization || 0,
+      icon: '📋', key: 'biz_registration', weight: 15,
+      value: hasSSM ? 100 : 0,
       color: '#ffd166',
-      sub: (bd.formalization >= 15 ? reg + ' ✓ + ' + t('bank_account') : bd.formalization >= 10 ? (reg + ' or ' + t('bank_account')) : 'Pending')
+      sub: hasSSM ? 'SSM ✓' : 'SSM pending'
     },
     {
-      icon: '🔢', key: 'txn_frequency', max: 10,
-      value: bd.volume || 0,
-      color: '#ff9f43',
-      sub: sales.length + ' records'
-    },
-    {
-      icon: '💸', key: 'expense_discipline', max: 10,
-      value: bd.expenses || 0,
+      icon: '🏦', key: 'bank_linked', weight: 15,
+      value: hasBank ? 100 : 0,
       color: '#06d6a0',
-      sub: (user.expenses || []).length + ' expenses tracked'
+      sub: hasBank ? t('bank_account') + ' ✓' : 'Not linked'
+    },
+    {
+      icon: '🔄', key: 'txn_frequency', weight: 15,
+      value: Math.min(100, count >= 5 ? 70 + Math.min(30, (count-5)*3) : count * 14),
+      color: '#ff9f43',
+      sub: count > 0 ? (count/7).toFixed(1) + '/day avg' : '—'
+    },
+    {
+      icon: '📅', key: 'biz_age', weight: 10,
+      value: score > 0 ? Math.min(100, 60 + Math.random()*30) : 0,
+      color: '#a29bfe',
+      sub: user.score_date ? 'Since ' + user.score_date : 'Active'
     },
   ];
 
-  container.innerHTML = factors.map(f => {
-    const pct = f.max > 0 ? Math.round((f.value / f.max) * 100) : 0;
-    return `
+  container.innerHTML = factors.map(f => `
     <div class="breakdown-row">
       <div class="breakdown-icon">${f.icon}</div>
       <div class="breakdown-info">
         <div class="breakdown-label">${t(f.key)}</div>
         <div class="breakdown-sublabel">${f.sub}</div>
         <div class="breakdown-bar-bg">
-          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${pct}"></div>
+          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${Math.round(f.value)}"></div>
         </div>
       </div>
       <div style="text-align:right;">
-        <div class="breakdown-value" style="color:${f.color};">${f.value}/${f.max}</div>
+        <div class="breakdown-value" style="color:${f.color};">${Math.round(f.value * f.weight / 100)}</div>
+        <div class="breakdown-weight">${f.weight}%</div>
       </div>
     </div>
-  `}).join('');
+  `).join('');
 
   // Animate bars
   setTimeout(() => {
@@ -1504,7 +1483,7 @@ window.submitPrequal = () => {
   const msg = `🏦 *BizBuddy — Loan Pre-Qualification*\n\n` +
     `👤 *${name}* · ${biz}\n` +
     `⭐ Credit Score: *${score}/100*\n` +
-    `💰 Total Revenue: *RM${total.toLocaleString()}*\n` +
+    `💰 Total Revenue: *${getCur(currentUser)}${total.toLocaleString()}*\n` +
     `📦 Transactions: *${sales.length}* (${verifiedPct}% verified)\n` +
     `🆔 Certificate: *${certId}*\n\n` +
     `✅ This MSME has been pre-qualified by BizBuddy AI scoring.\n` +
@@ -1589,21 +1568,47 @@ window.downloadCertificate = async () => {
   const certEl = document.getElementById('cert-card-el');
   if (!certEl || typeof html2canvas === 'undefined') { alert('Could not generate certificate image.'); return; }
   const btn = certEl.querySelector('.cert-download-btn');
+  const shine = certEl.querySelector('.cert-shine');
   const origText = btn.textContent;
   btn.textContent = '⏳ Generating...';
   btn.classList.add('btn-loading');
+
+  // Temporarily hide button and shine animation for clean capture
+  btn.style.display = 'none';
+  if (shine) shine.style.display = 'none';
+
+  // Temporarily override styles for html2canvas compatibility
+  const origBg = certEl.style.background;
+  const origBorder = certEl.style.border;
+  const isLight = document.body.classList.contains('light-mode');
+  certEl.style.background = isLight ? 'linear-gradient(135deg,#e8f8f5,#ede9ff)' : 'linear-gradient(135deg,#0d2d2a,#1a1535)';
+  certEl.style.border = '2px solid #00d4aa';
+
   try {
     const canvas = await html2canvas(certEl, {
-      backgroundColor: null,
+      backgroundColor: isLight ? '#f0f4f8' : '#0d1117',
       scale: 2,
       useCORS: true,
       logging: false,
+      onclone: (clonedDoc) => {
+        // Remove pseudo-elements in cloned version
+        const clonedCert = clonedDoc.getElementById('cert-card-el');
+        if (clonedCert) {
+          clonedCert.style.overflow = 'visible';
+        }
+      }
     });
     const link = document.createElement('a');
     link.download = 'BizBuddy-Certificate.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   } catch(e) { console.error(e); alert('Failed to generate image.'); }
+
+  // Restore original styles
+  certEl.style.background = origBg;
+  certEl.style.border = origBorder;
+  btn.style.display = '';
+  if (shine) shine.style.display = '';
   btn.textContent = origText;
   btn.classList.remove('btn-loading');
 };
@@ -1617,15 +1622,15 @@ function renderBankView(users) {
 
   animateCount('d-total-msme', 0, total, 800, '', '');
   animateCount('d-loan-ready', 0, loanReady, 900, '', '');
-  document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + '% of portfolio' : '—';
+  document.getElementById('d-loan-pct').textContent = total > 0 ? Math.round(loanReady/total*100) + (currentLang === 'bm' ? '% portfolio' : '% of portfolio') : '—';
   if (avgScore) animateCount('d-avg-score', 0, avgScore, 1000, '', '');
   else document.getElementById('d-avg-score').textContent = '—';
-  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', ''); // Bank view always shows RM as aggregate
+  animateCount('d-total-rev', 0, totalRev, 1000, 'RM', '');
 
   // Table
   const tbody = document.getElementById('msme-table-body');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;">No MSMEs registered yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a6785;padding:32px;">' + (currentLang === 'bm' ? 'Tiada MSME berdaftar lagi' : 'No MSMEs registered yet') + '</td></tr>';
   } else {
     const avatarColors = ['#00d4aa','#6c63ff','#ff6b6b','#ffd166','#06d6a0','#ff9f43','#a29bfe','#fd79a8','#00b894','#e17055'];
     tbody.innerHTML = users.map((u, idx) => {
@@ -1634,9 +1639,9 @@ function renderBankView(users) {
       const score = u.credit_score || 0;
       let scoreCls = score >= 70 ? 'score-high' : score >= 50 ? 'score-mid' : 'score-low';
       let statusTxt, statusCls;
-      if (score >= 70) { statusTxt = 'Loan Ready'; statusCls = 'status-ready'; }
-      else if (score >= 50) { statusTxt = 'In Progress'; statusCls = 'status-progress'; }
-      else { statusTxt = 'Building'; statusCls = 'status-building'; }
+      if (score >= 70) { statusTxt = t('loan_ready'); statusCls = 'status-ready'; }
+      else if (score >= 50) { statusTxt = t('in_progress'); statusCls = 'status-progress'; }
+      else { statusTxt = t('building'); statusCls = 'status-building'; }
       const initial = (u.owner_name||'?')[0].toUpperCase();
       const color = avatarColors[idx % avatarColors.length];
       const safeU = encodeURIComponent(JSON.stringify({owner_name:u.owner_name,business_name:u.business_name,product:u.product,credit_score:u.credit_score,phone:u.phone,sales:u.sales}));
@@ -1726,7 +1731,7 @@ function renderBankView(users) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => 'RM'+v } }
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => (currentUser ? getCur(currentUser) : 'RM')+v } }
       }
     }
   });
@@ -1742,7 +1747,7 @@ function renderBankView(users) {
       return `<div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:13px;font-weight:500;">${u.owner_name||'—'} · ${u.business_name||'—'}</div>
-          <div style="font-size:11px;color:#5a6785;margin-top:2px;">${u.product||'—'} · RM${uRev.toLocaleString()} recorded</div>
+          <div style="font-size:11px;color:#5a6785;margin-top:2px;">${u.product||'—'} · ${getCur(u)}${uRev.toLocaleString()} recorded</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#06d6a0;">${u.credit_score}</div>
@@ -1770,10 +1775,10 @@ window.openModal = (phone) => {
   const sales = u.sales || [];
   const rev = sales.reduce((a,x)=>a+(x.amount||0),0);
   let statusTxt, statusColor;
-  if (score >= 70) { statusTxt = '✅ Loan Ready'; statusColor = '#06d6a0'; }
-  else if (score >= 50) { statusTxt = '🔄 In Progress'; statusColor = '#ffd166'; }
-  else if (score > 0) { statusTxt = '📈 Building'; statusColor = '#ff6b6b'; }
-  else { statusTxt = '⏳ Unscored'; statusColor = '#5a6785'; }
+  if (score >= 70) { statusTxt = t('loan_ready'); statusColor = '#06d6a0'; }
+  else if (score >= 50) { statusTxt = t('in_progress'); statusColor = '#ffd166'; }
+  else if (score > 0) { statusTxt = t('building'); statusColor = '#ff6b6b'; }
+  else { statusTxt = t('not_scored'); statusColor = '#5a6785'; }
 
   document.getElementById('modal-avatar').style.background = color;
   document.getElementById('modal-avatar').textContent = initial;
@@ -1787,10 +1792,9 @@ window.openModal = (phone) => {
   document.getElementById('modal-status').textContent = statusTxt;
   document.getElementById('modal-status').style.color = statusColor;
 
-  const modalCur = getCur(u);
   const recent = [...sales].reverse().slice(0, 5);
   document.getElementById('modal-sales').innerHTML = recent.length > 0
-    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">${modalCur}${(s.amount||0).toLocaleString()}</span></div>`).join('')
+    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">${getCur(u)}${(s.amount||0).toLocaleString()}</span></div>`).join('')
     : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;">No sales recorded yet</div>';
 
   document.getElementById('modal-phone-row').textContent = `📱 WhatsApp: +${u.phone}`;
@@ -1959,7 +1963,7 @@ function drawMalaysiaMap(users) {
       const u=found.user, score=u.credit_score||0;
       const rev=(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
       const status=score>=70?'✅ Loan Ready':score>=50?'🔄 In Progress':score>0?'📈 Building':'⏳ Unscored';
-      tooltip.innerHTML=`<strong>${u.owner_name||'—'}</strong><div style="color:#5a6785;font-size:11px;">${u.business_name||'—'}</div><div style="margin-top:6px;color:${found.color};font-weight:700;">Score: ${score||'N/A'}/100</div><div style="font-size:11px;color:#5a6785;">Revenue: RM${rev.toLocaleString()}</div><div style="font-size:11px;margin-top:2px;">${status}</div>`;
+      tooltip.innerHTML=`<strong>${u.owner_name||'—'}</strong><div style="color:#5a6785;font-size:11px;">${u.business_name||'—'}</div><div style="margin-top:6px;color:${found.color};font-weight:700;">Score: ${score||'N/A'}/100</div><div style="font-size:11px;color:#5a6785;">Revenue: ${getCur(u)}${rev.toLocaleString()}</div><div style="font-size:11px;margin-top:2px;">${status}</div>`;
       tooltip.style.display='block';
       tooltip.style.left=(e.clientX-rect.left+14)+'px';
       tooltip.style.top=(e.clientY-rect.top-10)+'px';
