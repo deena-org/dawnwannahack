@@ -78,6 +78,19 @@ def handle_text(phone, text):
     if text_upper == "ENGLISH":
         if user.exists:
             user_ref.update({"language": "en"})
+            # If still in consent state, re-show welcome in English
+            user_data_check = user_ref.get().to_dict()
+            if user_data_check.get("state") == "ask_consent":
+                send_message(phone,
+                    "👋 *Welcome to BizBuddy!*\n\n"
+                    "I'll help you build your business profile & credit score in 5 minutes.\n\n"
+                    "🔒 *Your Privacy & Data:*\n"
+                    "• BizBuddy stores your business data (name, sales, product) to build your credit profile.\n"
+                    "• Your data *will not be shared* with any party without your consent.\n"
+                    "• You can delete all your data anytime by typing *RESET*.\n\n"
+                    "Type *AGREE* to continue"
+                )
+                return
         send_message(phone,
             "🌐 *Language switched to English!*\n\n"
             "All responses will now be in English.\n"
@@ -88,6 +101,19 @@ def handle_text(phone, text):
     if text_upper == "BM":
         if user.exists:
             user_ref.update({"language": "bm"})
+            # If still in consent state, re-show welcome in BM
+            user_data_check = user_ref.get().to_dict()
+            if user_data_check.get("state") == "ask_consent":
+                send_message(phone,
+                    "👋 *Selamat datang ke BizBuddy!*\n\n"
+                    "Saya akan bantu awak bina profil perniagaan & skor kredit dalam masa 5 minit.\n\n"
+                    "🔒 *Privasi & Data Awak:*\n"
+                    "• BizBuddy menyimpan data perniagaan awak (nama, jualan, produk) untuk membina profil kredit.\n"
+                    "• Data awak *tidak akan dikongsi* dengan mana-mana pihak tanpa kebenaran awak.\n"
+                    "• Awak boleh padam semua data bila-bila masa dengan taip *RESET*.\n\n"
+                    "Taip *SETUJU* untuk teruskan"
+                )
+                return
         send_message(phone,
             "🌐 *Bahasa ditukar ke Bahasa Malaysia!*\n\n"
             "Semua respons akan dalam Bahasa Malaysia.\n"
@@ -474,7 +500,7 @@ def handle_menu(phone, text, user_ref):
                 "2️⃣ Jana Skor Kredit Saya\n"
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
                 "4️⃣ Hantar Gambar Resit/Bayaran\n"
-                "5️⃣ Ringkasan Jualan Saya\n"
+                "5️⃣ Ringkasan Jualan Saya\n\n"
                 "6️⃣ Jana Kandungan Media Sosial\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
