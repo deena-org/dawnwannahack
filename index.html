@@ -165,7 +165,7 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 .desk-stat-label{font-size:12px;color:var(--muted);}
 .desk-stat-trend{font-size:11px;color:var(--green);margin-top:6px;}
 
-.desk-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+.desk-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;align-items:start;}
 .desk-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;}
 .desk-card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
 
@@ -189,6 +189,20 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 .table-search input{flex:1;min-width:160px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
 .table-search input:focus{border-color:var(--accent);}
 .table-search select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:16px 0 4px;border-top:1px solid var(--border);margin-top:8px;flex-wrap:wrap;gap:8px;}
+.pagination-info{font-size:12px;color:var(--muted);}
+.pagination-btns{display:flex;gap:4px;}
+.pg-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.pg-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.pg-btn:disabled{opacity:0.3;cursor:default;}
+.pg-size{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.pg-size select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+/* RIGHT COLUMN STICKY */
+.desk-row .desk-card:last-child{position:sticky;top:76px;align-self:start;}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;transition:background 0.25s ease,backdrop-filter 0.25s ease;}
@@ -619,6 +633,21 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
             <tbody id="msme-table-body"></tbody>
           </table>
         </div>
+        <div class="pagination" id="table-pagination">
+          <div class="pagination-info" id="pg-info">Showing 0 of 0</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="pg-size">
+              <span>Show</span>
+              <select id="pg-size-select" onchange="changePageSize(this.value)">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="pagination-btns" id="pg-btns"></div>
+          </div>
+        </div>
       </div>
       <div class="desk-card">
         <h3>📊 <span data-i18n="score_dist">Score Distribution</span></h3>
@@ -757,6 +786,14 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
+
+// ── XSS SANITIZATION ──
+function esc(str) {
+  if (str === null || str === undefined) return '—';
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(str)));
+  return d.innerHTML;
+}
 
 let currentView = 'mobile';
 let currentUser = null;
@@ -1156,8 +1193,8 @@ function buildSalesList(sales) {
   document.getElementById('sales-list').innerHTML = recent.map(s => `
     <div class="sale-item">
       <div class="sale-left">
-        <div class="sale-item-name">${s.item || 'Sale'}</div>
-        <div class="sale-date">${s.date || '—'} ${s.source === 'screenshot' ? '📸' : '💬'}</div>
+        <div class="sale-item-name">${esc(s.item || 'Sale')}</div>
+        <div class="sale-date">${esc(s.date)} ${s.source === 'screenshot' ? '📸' : '💬'}</div>
       </div>
       <div class="sale-amount">${getCur(currentUser)}${(s.amount||0).toLocaleString()}</div>
     </div>
@@ -1249,6 +1286,7 @@ const translations = {
     bank_linked: 'Bank Account Linked',
     txn_frequency: 'Transaction Frequency',
     biz_age: 'Business Age',
+    expense_discipline: 'Expense Discipline',
     empty_title: "Let's get started!",
     empty_desc: 'Log your first sale via WhatsApp to see your dashboard come alive. Every transaction builds your credit history.',
     empty_cta: 'Log First Sale via WhatsApp',
@@ -1341,6 +1379,7 @@ const translations = {
     bank_linked: 'Akaun Bank Disambung',
     txn_frequency: 'Kekerapan Transaksi',
     biz_age: 'Usia Perniagaan',
+    expense_discipline: 'Disiplin Perbelanjaan',
     empty_title: 'Jom mula!',
     empty_desc: 'Rekod jualan pertama anda melalui WhatsApp untuk melihat papan pemuka anda. Setiap transaksi membina sejarah kredit anda.',
     empty_cta: 'Rekod Jualan Pertama via WhatsApp',
@@ -1441,67 +1480,70 @@ function buildScoreBreakdown(user, sales) {
   }
   card.style.display = 'block';
 
+  const bd = user.score_breakdown || {};
   const count = sales.length;
   const total = sales.reduce((s,x) => s + (x.amount||0), 0);
   const hasSSM = !!(user.has_ssm && user.has_ssm.toLowerCase().includes('y'));
   const hasBank = !!(user.has_bank_account && user.has_bank_account.toLowerCase().includes('y'));
+  const cc = getUserCountry(user);
 
-  // Calculate factor scores (these simulate the AI scoring weights)
+  // Use REAL stored breakdown from backend (calculate_credit_score in app.py)
   const factors = [
     {
-      icon: '📊', key: 'txn_consistency', weight: 25,
-      value: Math.min(100, count >= 10 ? 90 + Math.min(10, (count-10)*0.5) : count * 9),
+      icon: '📊', key: 'txn_consistency', max: 25,
+      value: bd.consistency || 0,
       color: '#00d4aa',
       sub: count >= 10 ? count + ' transactions ✓' : count + '/10 ' + t('transactions').toLowerCase()
     },
     {
-      icon: '💰', key: 'rev_volume', weight: 20,
-      value: Math.min(100, total >= 5000 ? 85 + Math.min(15, (total-5000)/1000) : (total/5000)*85),
+      icon: '💰', key: 'rev_volume', max: 20,
+      value: bd.revenue || 0,
       color: '#6c63ff',
       sub: getCur(user) + total.toLocaleString()
     },
     {
-      icon: '📋', key: 'biz_registration', weight: 15,
-      value: hasSSM ? 100 : 0,
-      color: '#ffd166',
-      sub: hasSSM ? 'SSM ✓' : 'SSM pending'
-    },
-    {
-      icon: '🏦', key: 'bank_linked', weight: 15,
-      value: hasBank ? 100 : 0,
-      color: '#06d6a0',
-      sub: hasBank ? t('bank_account') + ' ✓' : 'Not linked'
-    },
-    {
-      icon: '🔄', key: 'txn_frequency', weight: 15,
-      value: Math.min(100, count >= 5 ? 70 + Math.min(30, (count-5)*3) : count * 14),
-      color: '#ff9f43',
-      sub: count > 0 ? (count/7).toFixed(1) + '/day avg' : '—'
-    },
-    {
-      icon: '📅', key: 'biz_age', weight: 10,
-      value: score > 0 ? Math.min(100, 60 + Math.random()*30) : 0,
+      icon: '📅', key: 'biz_age', max: 15,
+      value: bd.age || 0,
       color: '#a29bfe',
-      sub: user.score_date ? 'Since ' + user.score_date : 'Active'
+      sub: user.biz_age || (user.score_date ? 'Since ' + user.score_date : '—')
+    },
+    {
+      icon: '📋', key: 'biz_registration', max: 20,
+      value: bd.formalization || 0,
+      color: '#ffd166',
+      sub: (hasSSM ? cc.registration + ' ✓' : cc.registration + ' pending') + ' · ' + (hasBank ? t('bank_account') + ' ✓' : 'No bank')
+    },
+    {
+      icon: '🔢', key: 'txn_frequency', max: 10,
+      value: bd.volume || 0,
+      color: '#ff9f43',
+      sub: count + ' records'
+    },
+    {
+      icon: '💸', key: 'expense_discipline', max: 10,
+      value: bd.expenses || 0,
+      color: '#06d6a0',
+      sub: (user.expenses || []).length + ' expense records'
     },
   ];
 
-  container.innerHTML = factors.map(f => `
+  container.innerHTML = factors.map(f => {
+    const pct = f.max > 0 ? Math.round((f.value / f.max) * 100) : 0;
+    return `
     <div class="breakdown-row">
       <div class="breakdown-icon">${f.icon}</div>
       <div class="breakdown-info">
         <div class="breakdown-label">${t(f.key)}</div>
-        <div class="breakdown-sublabel">${f.sub}</div>
+        <div class="breakdown-sublabel">${esc(f.sub)}</div>
         <div class="breakdown-bar-bg">
-          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${Math.round(f.value)}"></div>
+          <div class="breakdown-bar-fill" style="width:0%;background:${f.color};" data-target="${pct}"></div>
         </div>
       </div>
       <div style="text-align:right;">
-        <div class="breakdown-value" style="color:${f.color};">${Math.round(f.value * f.weight / 100)}</div>
-        <div class="breakdown-weight">${f.weight}%</div>
+        <div class="breakdown-value" style="color:${f.color};">${f.value}/${f.max}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   // Animate bars
   setTimeout(() => {
@@ -1716,21 +1758,24 @@ function renderBankView(users) {
       if (score >= 70) { statusTxt = t('loan_ready'); statusCls = 'status-ready'; }
       else if (score >= 50) { statusTxt = t('in_progress'); statusCls = 'status-progress'; }
       else { statusTxt = t('building'); statusCls = 'status-building'; }
-      const initial = (u.owner_name||'?')[0].toUpperCase();
+      const initial = esc((u.owner_name||'?')[0].toUpperCase());
       const color = avatarColors[idx % avatarColors.length];
-      const safeU = encodeURIComponent(JSON.stringify({owner_name:u.owner_name,business_name:u.business_name,product:u.product,credit_score:u.credit_score,phone:u.phone,sales:u.sales}));
       const cc = getUserCountry(u);
-      return `<tr style="cursor:pointer;" onclick="openModal('${u.phone}')" data-name="${(u.owner_name||'').toLowerCase()}" data-biz="${(u.business_name||'').toLowerCase()}" data-status="${statusCls}">
-        <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${color};">${initial}</div><strong>${u.owner_name||'—'}</strong></div></td>
-        <td>${u.business_name||'—'}</td>
-        <td><span style="font-size:14px;">${cc.flag}</span> ${cc.name}</td>
-        <td>${u.product||'—'}</td>
+      return `<tr style="cursor:pointer;" onclick="openModal('${esc(u.phone)}')" data-name="${esc((u.owner_name||'').toLowerCase())}" data-biz="${esc((u.business_name||'').toLowerCase())}" data-status="${statusCls}">
+        <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${color};">${initial}</div><strong>${esc(u.owner_name)}</strong></div></td>
+        <td>${esc(u.business_name)}</td>
+        <td><span style="font-size:14px;">${cc.flag}</span> ${esc(cc.name)}</td>
+        <td>${esc(u.product)}</td>
         <td>${getCur(u)}${uRev.toLocaleString()}</td>
         <td><span class="score-pill ${scoreCls}">${score||'N/A'}</span></td>
         <td><span class="status-pill ${statusCls}">${statusTxt}</span></td>
       </tr>`;
     }).join('');
   }
+
+  // Apply pagination after table render
+  currentPage = 1;
+  renderTablePage();
 
   // Score distribution
   const ranges = [
@@ -1822,8 +1867,8 @@ function renderBankView(users) {
       const uRev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
       return `<div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:13px;font-weight:500;">${u.owner_name||'—'} · ${u.business_name||'—'}</div>
-          <div style="font-size:11px;color:#5a6785;margin-top:2px;">${u.product||'—'} · ${getCur(u)}${uRev.toLocaleString()} recorded</div>
+          <div style="font-size:13px;font-weight:500;">${esc(u.owner_name)} · ${esc(u.business_name)}</div>
+          <div style="font-size:11px;color:#5a6785;margin-top:2px;">${esc(u.product)} · ${getCur(u)}${uRev.toLocaleString()} recorded</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#06d6a0;">${u.credit_score}</div>
@@ -1870,7 +1915,7 @@ window.openModal = (phone) => {
 
   const recent = [...sales].reverse().slice(0, 5);
   document.getElementById('modal-sales').innerHTML = recent.length > 0
-    ? recent.map(s => `<div class="modal-sale-item"><span>${s.item||'Sale'} · ${s.date||'—'}</span><span style="color:var(--accent);font-weight:600;">${getCur(u)}${(s.amount||0).toLocaleString()}</span></div>`).join('')
+    ? recent.map(s => `<div class="modal-sale-item"><span>${esc(s.item||'Sale')} · ${esc(s.date)}</span><span style="color:var(--accent);font-weight:600;">${getCur(u)}${(s.amount||0).toLocaleString()}</span></div>`).join('')
     : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;">No sales recorded yet</div>';
 
   document.getElementById('modal-phone-row').textContent = `📱 WhatsApp: +${u.phone}`;
@@ -1885,12 +1930,33 @@ document.getElementById('msme-modal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('msme-modal')) closeModal();
 });
 
-// ── SEARCH & FILTER ──
+// ── SEARCH, FILTER & PAGINATION ──
+let currentPage = 1;
+let pageSize = 10;
+
 window.filterTable = () => {
+  currentPage = 1;
+  renderTablePage();
+};
+
+window.changePageSize = (size) => {
+  pageSize = parseInt(size);
+  currentPage = 1;
+  renderTablePage();
+};
+
+window.goToPage = (page) => {
+  currentPage = page;
+  renderTablePage();
+};
+
+function renderTablePage() {
   const search = (document.getElementById('msme-search')?.value || '').toLowerCase();
   const filter = document.getElementById('msme-filter')?.value || 'all';
-  const rows = document.querySelectorAll('#msme-table-body tr[data-name]');
-  rows.forEach(row => {
+  const rows = Array.from(document.querySelectorAll('#msme-table-body tr[data-name]'));
+
+  // Filter
+  let visible = rows.filter(row => {
     const name = row.dataset.name || '';
     const biz = row.dataset.biz || '';
     const status = row.dataset.status || '';
@@ -1899,9 +1965,56 @@ window.filterTable = () => {
       || (filter === 'ready' && status === 'status-ready')
       || (filter === 'progress' && status === 'status-progress')
       || (filter === 'building' && status === 'status-building');
-    row.style.display = matchSearch && matchFilter ? '' : 'none';
+    return matchSearch && matchFilter;
   });
-};
+
+  const totalFiltered = visible.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = startIdx + pageSize;
+
+  // Show/hide rows
+  rows.forEach(row => row.style.display = 'none');
+  visible.forEach((row, i) => {
+    row.style.display = (i >= startIdx && i < endIdx) ? '' : 'none';
+  });
+
+  // Update info text
+  const infoEl = document.getElementById('pg-info');
+  if (infoEl) {
+    const showStart = totalFiltered === 0 ? 0 : startIdx + 1;
+    const showEnd = Math.min(endIdx, totalFiltered);
+    infoEl.textContent = `Showing ${showStart}–${showEnd} of ${totalFiltered}`;
+  }
+
+  // Render page buttons
+  const btnsEl = document.getElementById('pg-btns');
+  if (btnsEl) {
+    let html = `<button class="pg-btn" onclick="goToPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹</button>`;
+    // Smart page range
+    let pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages = [1];
+      if (currentPage > 3) pages.push('...');
+      for (let i = Math.max(2, currentPage-1); i <= Math.min(totalPages-1, currentPage+1); i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    pages.forEach(p => {
+      if (p === '...') {
+        html += `<span style="color:var(--muted);padding:0 4px;">…</span>`;
+      } else {
+        html += `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goToPage(${p})">${p}</button>`;
+      }
+    });
+    html += `<button class="pg-btn" onclick="goToPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>›</button>`;
+    btnsEl.innerHTML = html;
+  }
+}
 
 // ── WHATSAPP SHARE ──
 window.shareViaWhatsApp = () => {
@@ -1939,16 +2052,21 @@ window.exportPDF = () => {
   const loanReady = users.filter(u=>(u.credit_score||0)>=70).length;
   const scores = users.map(u=>u.credit_score||0).filter(s=>s>0);
   const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
-  const totalRev = users.reduce((s,u)=>(u.sales||[]).reduce((a,x)=>a+(x.amount||0),0)+s,0);
+  const totalRev = users.reduce((s,u) => {
+    const userCur = getCur(u);
+    const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
+    return s + convertToDisplayCurrency(rev, userCur);
+  }, 0);
   const date = new Date().toLocaleDateString('en-MY',{year:'numeric',month:'long',day:'numeric'});
   const rows = users.map(u => {
     const rev = (u.sales||[]).reduce((a,x)=>a+(x.amount||0),0);
     const score = u.credit_score||0;
     const status = score>=70?'Loan Ready':score>=50?'In Progress':'Building';
     return `<tr style="border-bottom:1px solid #eee;">
-      <td style="padding:8px 12px;">${u.owner_name||'—'}</td>
-      <td style="padding:8px 12px;">${u.business_name||'—'}</td>
-      <td style="padding:8px 12px;">${u.product||'—'}</td>
+      <td style="padding:8px 12px;">${esc(u.owner_name)}</td>
+      <td style="padding:8px 12px;">${esc(u.business_name)}</td>
+      <td style="padding:8px 12px;">${getUserCountry(u).flag} ${esc(u.user_state||getUserCountry(u).name)}</td>
+      <td style="padding:8px 12px;">${esc(u.product)}</td>
       <td style="padding:8px 12px;">${getCur(u)}${rev.toLocaleString()}</td>
       <td style="padding:8px 12px;font-weight:700;color:${score>=70?'#00a67e':score>=50?'#e6a817':'#e55353'}">${score||'N/A'}</td>
       <td style="padding:8px 12px;">${status}</td>
@@ -1962,9 +2080,9 @@ window.exportPDF = () => {
   <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total MSMEs</div></div>
   <div class="stat" style="border-left-color:#06d6a0;"><div class="stat-val" style="color:#00a67e;">${loanReady}</div><div class="stat-label">Loan Ready (70+)</div></div>
   <div class="stat" style="border-left-color:#ffd166;"><div class="stat-val" style="color:#e6a817;">${avgScore||'—'}</div><div class="stat-label">Avg Credit Score</div></div>
-  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">RM${totalRev.toLocaleString()}</div><div class="stat-label">Total Revenue Tracked</div></div>
+  <div class="stat" style="border-left-color:#00d4aa;"><div class="stat-val">${displayCurrency}${totalRev.toLocaleString()}</div><div class="stat-label">Total Revenue Tracked</div></div>
 </div>
-<table><thead><tr><th>Name</th><th>Business</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
+<table><thead><tr><th>Name</th><th>Business</th><th>Location</th><th>Product</th><th>Revenue</th><th>Score</th><th>Status</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="footer">Powered by BizBuddy AI · Confidential Portfolio Report · ${date}</div>
 </body></html>`;
@@ -2022,11 +2140,30 @@ function drawMalaysiaMap(users) {
   ctx.fillStyle=isLight?'rgba(50,60,80,0.25)':'rgba(90,103,133,0.3)'; ctx.font='italic '+Math.round(9*sX)+'px DM Sans';
   var waters=[['South China Sea',480,100],['Indian Ocean',150,350],['Pacific Ocean',800,60],['Java Sea',420,315]];
   waters.forEach(function(a){ctx.fillText(a[0],a[1]*sX,a[2]*sY);});
-  // User dots by country
-  var countryPos = {
-    MY: [[328,220],[335,210],[322,240],[345,225],[330,248],[480,175],[520,170],[460,185]],
-    ID: [[380,295],[400,292],[420,290],[250,270],[260,285],[540,260],[440,298]],
-    PH: [[690,55],[695,80],[685,100],[700,110],[680,130],[692,40],[670,115]]
+  // User dots by state (real geographic positions on canvas)
+  var statePos = {
+    // Malaysia — Peninsular
+    'Johor': [340,258], 'Kedah': [318,190], 'Kelantan': [338,190], 'Melaka': [332,252],
+    'Negeri Sembilan': [328,245], 'Pahang': [335,218], 'Perak': [322,205], 'Perlis': [315,182],
+    'Pulau Pinang': [316,195], 'Selangor': [325,230], 'Terengganu': [342,200],
+    'KL': [328,232], 'Putrajaya': [330,234], 'Labuan': [440,170],
+    // Malaysia — Borneo
+    'Sabah': [510,162], 'Sarawak': [460,185],
+    // Indonesia
+    'Jakarta': [330,292], 'Jawa Barat': [345,290], 'Jawa Tengah': [370,288],
+    'Jawa Timur': [400,286], 'Bali': [425,288], 'Sumatera Utara': [240,235],
+    'Sumatera Barat': [238,255], 'Sumatera Selatan': [255,275],
+    'Kalimantan': [470,210], 'Sulawesi': [535,255], 'Papua': [620,230],
+    'Yogyakarta': [380,292],
+    // Philippines
+    'Metro Manila': [688,80], 'Cebu': [705,115], 'Davao': [710,140],
+    'Calabarzon': [690,88], 'Central Luzon': [685,68], 'Western Visayas': [695,110],
+    'Central Visayas': [700,118], 'Northern Mindanao': [705,132],
+    'Ilocos': [680,50], 'Bicol': [698,95],
+  };
+  // Fallback positions per country (for users without state)
+  var countryFallback = {
+    MY: [328,232], ID: [380,292], PH: [690,80]
   };
   var dots=[];
   users.forEach(function(user,idx){
@@ -2036,9 +2173,9 @@ function drawMalaysiaMap(users) {
     else if(score>=50){color='#ffd166';glow='rgba(255,209,102,0.4)';}
     else if(score>0){color='#ff6b6b';glow='rgba(255,107,107,0.4)';}
     var cty=user.country||'MY';
-    var pos=countryPos[cty]||countryPos.MY;
-    var base=pos[idx%pos.length];
-    var ox=(Math.random()-0.5)*8,oy=(Math.random()-0.5)*8;
+    var userState=user.user_state||'';
+    var base=statePos[userState]||countryFallback[cty]||countryFallback.MY;
+    var ox=(Math.random()-0.5)*10,oy=(Math.random()-0.5)*10;
     var pt=sp(base[0]+ox,base[1]+oy);
     var cx=pt[0],cy=pt[1];
     var grad=ctx.createRadialGradient(cx,cy,0,cx,cy,14*sX);
@@ -2060,7 +2197,8 @@ function drawMalaysiaMap(users) {
       var rev=(u.sales||[]).reduce(function(a,x){return a+(x.amount||0);},0);
       var cc=getUserCountry(u);
       var st=sc>=70?t('loan_ready'):sc>=50?t('in_progress'):sc>0?t('building'):t('not_scored');
-      tooltip.innerHTML='<strong>'+(u.owner_name||'—')+'</strong><div style="color:#5a6785;font-size:11px;">'+(u.business_name||'—')+' · '+cc.flag+' '+cc.name+'</div><div style="margin-top:6px;color:'+found.color+';font-weight:700;">Score: '+(sc||'N/A')+'/100</div><div style="font-size:11px;color:#5a6785;">Revenue: '+getCur(u)+rev.toLocaleString()+'</div><div style="font-size:11px;margin-top:2px;">'+st+'</div>';
+      var uState=u.user_state?(' · '+esc(u.user_state)):'';
+      tooltip.innerHTML='<strong>'+esc(u.owner_name)+'</strong><div style="color:#5a6785;font-size:11px;">'+esc(u.business_name)+' · '+cc.flag+' '+esc(cc.name)+uState+'</div><div style="margin-top:6px;color:'+found.color+';font-weight:700;">Score: '+(sc||'N/A')+'/100</div><div style="font-size:11px;color:#5a6785;">Revenue: '+getCur(u)+rev.toLocaleString()+'</div><div style="font-size:11px;margin-top:2px;">'+st+'</div>';
       tooltip.style.display='block';
       tooltip.style.left=(e.clientX-rect.left+14)+'px';
       tooltip.style.top=(e.clientY-rect.top-10)+'px';
