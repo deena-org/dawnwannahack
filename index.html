@@ -521,6 +521,17 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
       <div id="breakdown-rows"></div>
     </div>
 
+    <!-- SCORE HISTORY -->
+    <div class="chart-card fade-up fade-up-3" id="score-history-card" style="display:none;">
+      <div class="section-header">
+        <div class="section-title" data-i18n="score_history">Score History</div>
+        <div class="section-badge" id="score-history-badge">—</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="score-history-chart"></canvas>
+      </div>
+    </div>
+
     <div class="chart-card fade-up fade-up-3">
       <div class="section-header">
         <div class="section-title" data-i18n="sales_activity">Sales Activity</div>
@@ -687,6 +698,42 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
         <div class="map-legend-item"><div class="map-legend-dot" style="background:#5a6785"></div><span data-i18n="legend_unscored">Unscored</span></div>
       </div>
     </div>
+    <!-- IMPACT METRICS -->
+    <div class="desk-card fade-up fade-up-5" id="impact-metrics-card" style="margin-bottom:24px;">
+      <h3>🌍 <span data-i18n="impact_metrics">Impact Metrics</span></h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;" id="impact-stats">
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;text-align:center;border-left:4px solid #06d6a0;">
+          <div style="font-size:28px;margin-bottom:8px;">📈</div>
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--green);" id="impact-onboarded">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;" data-i18n="impact_onboarded">MSMEs Onboarded</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;text-align:center;border-left:4px solid #6c63ff;">
+          <div style="font-size:28px;margin-bottom:8px;">🔢</div>
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#6c63ff;" id="impact-txn-total">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;" data-i18n="impact_total_txn">Total Transactions Tracked</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;text-align:center;border-left:4px solid #ffd166;">
+          <div style="font-size:28px;margin-bottom:8px;">📋</div>
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--gold);" id="impact-referrals">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;" data-i18n="impact_loan_eligible">Loan-Eligible MSMEs</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;text-align:center;border-left:4px solid #00d4aa;">
+          <div style="font-size:28px;margin-bottom:8px;">🌏</div>
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);" id="impact-countries">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;" data-i18n="impact_countries">ASEAN Countries Reached</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="impact_inclusion">Financial Inclusion Progress</div>
+          <div style="display:flex;flex-direction:column;gap:10px;" id="impact-inclusion-bars"></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:16px;padding:20px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="impact_country_breakdown">Country Breakdown</div>
+          <div id="impact-country-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -801,6 +848,7 @@ let allUsers = [];
 let salesChartInstance = null;
 let portfolioChartInstance = null;
 let revenueChartInstance = null;
+let scoreHistoryChartInstance = null;
 
 // ── INIT ──
 window.addEventListener('load', async () => {
@@ -1073,6 +1121,9 @@ function loadMobileView(user) {
   // Certificate
   buildCertificate(user, score);
 
+  // Score History
+  buildScoreHistory(user);
+
   // Apply translations
   applyTranslations();
 }
@@ -1323,6 +1374,14 @@ const translations = {
     legend_progress: 'In Progress (50-69)',
     legend_building: 'Building (<50)',
     legend_unscored: 'Unscored',
+    score_history: 'Score History',
+    impact_metrics: 'Impact Metrics',
+    impact_onboarded: 'MSMEs Onboarded',
+    impact_total_txn: 'Total Transactions Tracked',
+    impact_loan_eligible: 'Loan-Eligible MSMEs',
+    impact_countries: 'ASEAN Countries Reached',
+    impact_inclusion: 'Financial Inclusion Progress',
+    impact_country_breakdown: 'Country Breakdown',
   },
   bm: {
     credit_readiness: 'Skor Kesediaan Kredit',
@@ -1416,6 +1475,14 @@ const translations = {
     legend_progress: 'Dalam Proses (50-69)',
     legend_building: 'Membina (<50)',
     legend_unscored: 'Belum Dinilai',
+    score_history: 'Sejarah Skor',
+    impact_metrics: 'Metrik Impak',
+    impact_onboarded: 'MSME Didaftarkan',
+    impact_total_txn: 'Jumlah Transaksi Direkod',
+    impact_loan_eligible: 'MSME Layak Pinjaman',
+    impact_countries: 'Negara ASEAN Dicapai',
+    impact_inclusion: 'Kemajuan Rangkuman Kewangan',
+    impact_country_breakdown: 'Pecahan Negara',
   }
 };
 
@@ -1668,6 +1735,177 @@ function buildGrowthTrends(sales) {
   }
 }
 
+// ══════════════════════════════════════════════
+// ── SCORE HISTORY (MSME Mobile View) ──
+// ══════════════════════════════════════════════
+function buildScoreHistory(user) {
+  const card = document.getElementById('score-history-card');
+  const badge = document.getElementById('score-history-badge');
+  if (!card) return;
+
+  const history = user.score_history || [];
+  const currentScore = user.credit_score || 0;
+  const currentDate = user.score_date || '';
+
+  // Build data: combine history + current score
+  let dataPoints = [];
+  history.forEach(h => {
+    dataPoints.push({ date: h.date, score: h.score });
+  });
+  // Add current score if not already the last entry
+  if (currentScore > 0 && currentDate) {
+    const lastEntry = dataPoints[dataPoints.length - 1];
+    if (!lastEntry || lastEntry.date !== currentDate || lastEntry.score !== currentScore) {
+      dataPoints.push({ date: currentDate, score: currentScore });
+    }
+  }
+
+  // Need at least 2 data points to show chart
+  if (dataPoints.length < 2) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+
+  // Calculate change
+  const first = dataPoints[0].score;
+  const last = dataPoints[dataPoints.length - 1].score;
+  const change = last - first;
+  if (change > 0) {
+    badge.textContent = '↑ +' + change + ' pts';
+    badge.style.color = 'var(--green)';
+  } else if (change < 0) {
+    badge.textContent = '↓ ' + change + ' pts';
+    badge.style.color = 'var(--warn)';
+  } else {
+    badge.textContent = '→ ' + t('no_change');
+    badge.style.color = 'var(--muted)';
+  }
+
+  const ctx = document.getElementById('score-history-chart').getContext('2d');
+  if (scoreHistoryChartInstance) scoreHistoryChartInstance.destroy();
+
+  const labels = dataPoints.map(d => {
+    const dt = new Date(d.date + 'T00:00:00');
+    return dt.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' });
+  });
+  const scores = dataPoints.map(d => d.score);
+
+  scoreHistoryChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: scores,
+        borderColor: '#6c63ff',
+        backgroundColor: 'rgba(108,99,255,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: scores.map((s,i) => i === scores.length - 1 ? '#6c63ff' : 'rgba(108,99,255,0.5)'),
+        pointRadius: scores.map((s,i) => i === scores.length - 1 ? 6 : 4),
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        fill: true,
+        tension: 0.35,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.parsed.y + '/100'
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 10 } } },
+        y: {
+          min: Math.max(0, Math.min(...scores) - 10),
+          max: Math.min(100, Math.max(...scores) + 10),
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#5a6785', font: { size: 11 }, stepSize: 10 }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+// ── IMPACT METRICS (Bank Desktop View) ──
+// ══════════════════════════════════════════════
+function buildImpactMetrics(users) {
+  const card = document.getElementById('impact-metrics-card');
+  if (!card) return;
+
+  const totalOnboarded = users.length;
+  const totalTxn = users.reduce((s, u) => s + (u.sales || []).length + (u.expenses || []).length, 0);
+  const loanEligible = users.filter(u => (u.credit_score || 0) >= 60).length;
+  const countries = new Set(users.map(u => u.country || 'MY'));
+
+  animateCount('impact-onboarded', 0, totalOnboarded, 800, '', '');
+  animateCount('impact-txn-total', 0, totalTxn, 1000, '', '');
+  animateCount('impact-referrals', 0, loanEligible, 900, '', '');
+  animateCount('impact-countries', 0, countries.size, 600, '', '');
+
+  // Financial Inclusion Progress bars
+  const scored = users.filter(u => (u.credit_score || 0) > 0).length;
+  const banked = users.filter(u => u.has_bank_account && u.has_bank_account.toLowerCase().startsWith('y')).length;
+  const registered = users.filter(u => u.has_ssm && u.has_ssm.toLowerCase().startsWith('y')).length;
+  const withExpenses = users.filter(u => (u.expenses || []).length > 0).length;
+
+  const inclusionBars = document.getElementById('impact-inclusion-bars');
+  if (inclusionBars) {
+    const metrics = [
+      { label: currentLang === 'bm' ? 'Dinilai kredit' : 'Credit Scored', count: scored, color: '#06d6a0' },
+      { label: currentLang === 'bm' ? 'Ada akaun bank' : 'Banked', count: banked, color: '#6c63ff' },
+      { label: currentLang === 'bm' ? 'Berdaftar rasmi' : 'Formally Registered', count: registered, color: '#ffd166' },
+      { label: currentLang === 'bm' ? 'Rekod perbelanjaan' : 'Tracking Expenses', count: withExpenses, color: '#ff9f43' },
+    ];
+    inclusionBars.innerHTML = metrics.map(m => {
+      const pct = totalOnboarded > 0 ? Math.round((m.count / totalOnboarded) * 100) : 0;
+      return `<div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;color:var(--text);">${m.label}</span>
+          <span style="font-size:12px;font-weight:700;color:${m.color};">${m.count}/${totalOnboarded} (${pct}%)</span>
+        </div>
+        <div style="height:6px;background:var(--surface);border-radius:100px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${m.color};border-radius:100px;transition:width 1s ease;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Country Breakdown
+  const countryList = document.getElementById('impact-country-list');
+  if (countryList) {
+    const countryData = {};
+    users.forEach(u => {
+      const code = u.country || 'MY';
+      if (!countryData[code]) countryData[code] = { count: 0, sales: 0, loanReady: 0, states: new Set() };
+      countryData[code].count++;
+      countryData[code].sales += (u.sales || []).reduce((a, x) => a + (x.amount || 0), 0);
+      if ((u.credit_score || 0) >= 70) countryData[code].loanReady++;
+      if (u.user_state) countryData[code].states.add(u.user_state);
+    });
+    countryList.innerHTML = Object.entries(countryData).map(([code, data]) => {
+      const cc = COUNTRY_CONFIG[code] || COUNTRY_CONFIG.MY;
+      return `<div style="background:var(--surface);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:16px;display:inline;">${cc.flag}</div>
+          <span style="font-size:13px;font-weight:600;margin-left:6px;">${cc.name}</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${data.count} MSMEs · ${data.states.size} ${currentLang === 'bm' ? 'negeri' : 'states'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--green);">${data.loanReady} ✅</div>
+          <div style="font-size:10px;color:var(--muted);">${currentLang === 'bm' ? 'layak pinjaman' : 'loan ready'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
 // ── BANK VIEW ──
 async function loadBankView() {
   document.getElementById('user-badge').textContent = currentLang === 'bm' ? 'Portal Bank' : 'Bank Portal';
@@ -1820,17 +2058,23 @@ function renderBankView(users) {
     }
   });
 
-  // Revenue chart
+  // Revenue chart — convert each user's sales to displayCurrency
   const rCtx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChartInstance) revenueChartInstance.destroy();
-  const allSales = users.flatMap(u => u.sales||[]);
   const last7 = [];
   const rLabels = [];
   for (let i=6; i>=0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
     const ds = d.toISOString().split('T')[0];
     rLabels.push(d.toLocaleDateString('en-MY',{weekday:'short'}));
-    last7.push(allSales.filter(s=>s.date===ds).reduce((a,s)=>a+(s.amount||0),0));
+    // Sum each user's daily sales converted to display currency
+    let dayTotal = 0;
+    users.forEach(u => {
+      const userCur = getCur(u);
+      const daySales = (u.sales||[]).filter(s=>s.date===ds).reduce((a,s)=>a+(s.amount||0),0);
+      dayTotal += convertToDisplayCurrency(daySales, userCur);
+    });
+    last7.push(dayTotal);
   }
   revenueChartInstance = new Chart(rCtx, {
     type: 'line',
@@ -1852,7 +2096,7 @@ function renderBankView(users) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { color: '#5a6785', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => (currentUser ? getCur(currentUser) : 'RM')+v } }
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6785', font: { size: 11 }, callback: v => displayCurrency + v.toLocaleString() } }
       }
     }
   });
@@ -1879,6 +2123,8 @@ function renderBankView(users) {
   }
   // Draw Malaysia map
   setTimeout(() => drawMalaysiaMap(users), 100);
+  // Impact Metrics
+  buildImpactMetrics(users);
 }
 
 // Allow Enter key on inputs

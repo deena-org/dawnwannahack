@@ -1207,7 +1207,11 @@ def generate_credit_score(phone, user_ref):
     user_ref.update({
         "credit_score": score_num,
         "score_date": str(datetime.now().date()),
-        "score_breakdown": breakdown
+        "score_breakdown": breakdown,
+        "score_history": firestore.ArrayUnion([{
+            "date": str(datetime.now().date()),
+            "score": score_num
+        }])
     })
 
     # STEP 2: Use AI only for explanation and improvement tips
