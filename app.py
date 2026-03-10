@@ -488,7 +488,7 @@ Return ONLY the extracted keywords, nothing else.
                 )
         else:
             # Route menu numbers directly, smart_handle for natural language
-            if text_upper in ["1","2","3","4","5","6","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER","KEMASKINI","UPDATE"]:
+            if text_upper in ["1","2","3","4","5","6","7","8","9","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER","KEMASKINI","UPDATE"]:
                 handle_menu(phone, text, user_ref)
             else:
                 smart_handle(phone, text, user_ref)
@@ -583,7 +583,7 @@ def smart_handle(phone, text, user_ref):
     if text_upper == "MENU":
         handle_menu(phone, "MENU", user_ref)
         return
-    if text_upper in ["1","2","3","4","5"]:
+    if text_upper in ["1","2","3","4","5","6","7","8","9"]:
         handle_menu(phone, text, user_ref)
         return
     if text_upper in ["PROFIL","PROFILE"]:
@@ -763,7 +763,10 @@ def handle_menu(phone, text, user_ref):
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
                 "4️⃣ Hantar Gambar Resit/Bayaran\n"
                 "5️⃣ Ringkasan Jualan Saya\n"
-                "6️⃣ Jana Kandungan Media Sosial\n\n"
+                "6️⃣ Jana Kandungan Media Sosial\n"
+                "7️⃣ 📈 Ramalan Jualan AI\n"
+                "8️⃣ 📦 Tip Rantaian Bekalan AI\n"
+                "9️⃣ 🌏 Panduan Eksport ASEAN\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
                 "💡 Taip *PECAHAN* untuk pecahan skor\n"
@@ -781,7 +784,10 @@ def handle_menu(phone, text, user_ref):
                 "3️⃣ Ask Business Question (AI)\n"
                 "4️⃣ Send Receipt/Payment Photo\n"
                 "5️⃣ My Sales Summary\n"
-                "6️⃣ Generate Social Media Content\n\n"
+                "6️⃣ Generate Social Media Content\n"
+                "7️⃣ 📈 AI Sales Forecast\n"
+                "8️⃣ 📦 AI Supply Chain Tips\n"
+                "9️⃣ 🌏 ASEAN Export Guide\n\n"
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
                 "💡 Type *BREAKDOWN* for score breakdown\n"
@@ -867,6 +873,12 @@ def handle_menu(phone, text, user_ref):
                 "5️⃣ Seasonal Promotion Ideas\n\n"
                 "_(Type MENU to go back)_"
             )
+    elif t_upper == "7":
+        show_sales_forecast(phone, user_ref)
+    elif t_upper == "8":
+        show_supply_chain_tips(phone, user_ref)
+    elif t_upper == "9":
+        show_export_guide(phone, user_ref)
     else:
         if lang == "bm":
             send_message(phone, "Taip *MENU* untuk lihat pilihan awak 😊")
@@ -2047,6 +2059,285 @@ def show_loan_referral(phone, user_ref):
             f"2. Send to your nearest {loan} office\n"
             "3. Or email to a loan officer\n\n"
             "Type *CERTIFICATE* for your credit certificate\n"
+            "Type *MENU* to go back"
+        )
+
+# ─────────────────────────────────────
+# 7️⃣ AI SALES FORECAST (Predictive Analytics)
+# ─────────────────────────────────────
+def show_sales_forecast(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
+    sales = user_data.get("sales", [])
+    expenses = user_data.get("expenses", [])
+    total_sales = sum(s.get("amount", 0) for s in sales)
+    total_expenses = sum(e.get("amount", 0) for e in expenses)
+    count = len(sales)
+
+    if count < 3:
+        if lang == "bm":
+            send_message(phone, "⚠️ *Perlukan sekurang-kurangnya 3 rekod jualan* untuk ramalan AI.\n\nRekod lebih banyak jualan dahulu, kemudian cuba lagi!\nTaip *MENU* untuk kembali")
+        else:
+            send_message(phone, "⚠️ *Need at least 3 sales records* for AI forecast.\n\nRecord more sales first, then try again!\nType *MENU* to go back")
+        return
+
+    if lang == "bm":
+        send_message(phone, "📈 Sedang menganalisis corak jualan awak...")
+    else:
+        send_message(phone, "📈 Analyzing your sales patterns...")
+
+    # Build sales timeline for AI
+    sales_timeline = "\n".join([f"- {s.get('date','?')}: {cur}{s.get('amount',0)} ({s.get('item','?')})" for s in sales[-15:]])
+    expense_timeline = "\n".join([f"- {e.get('date','?')}: {cur}{e.get('amount',0)} ({e.get('item','?')})" for e in expenses[-10:]])
+
+    lang_instruction = "Bahasa Malaysia yang mudah" if lang == "bm" else "simple English"
+    prompt = f"""
+You are a predictive analytics AI for small ASEAN businesses.
+Respond in {lang_instruction}.
+
+Analyze this MSME's sales data and provide:
+
+BUSINESS INFO:
+- Business: {user_data.get('business_name', '?')}
+- Product: {user_data.get('product', '?')}
+- Country: {cc['name']}
+- State: {user_data.get('user_state', '?')}
+- Monthly Revenue (stated): {user_data.get('monthly_revenue', '?')}
+- Total Recorded Sales: {cur}{total_sales}
+- Total Expenses: {cur}{total_expenses}
+- Number of transactions: {count}
+
+RECENT SALES (latest first):
+{sales_timeline}
+
+RECENT EXPENSES:
+{expense_timeline}
+
+Provide EXACTLY this format:
+📈 *RAMALAN JUALAN / SALES FORECAST*
+
+🔮 *Ramalan 30 Hari Seterusnya:*
+• Anggaran jualan: {cur}[amount range]
+• Trend: [naik/turun/stabil] [reason]
+
+📊 *Corak Yang Dikesan:*
+• [pattern 1 - e.g. peak days, best selling items]
+• [pattern 2 - e.g. seasonal trends]
+• [pattern 3 - e.g. expense ratio insight]
+
+💡 *Cadangan Untuk Tingkatkan Jualan:*
+• [specific actionable tip 1 based on their data]
+• [specific actionable tip 2]
+• [specific actionable tip 3]
+
+⚠️ *Risiko:*
+• [1 risk they should watch out for based on the data]
+
+Keep it practical and data-driven. Reference their actual numbers.
+"""
+    response = client.models.generate_content(model=MODEL, contents=prompt)
+
+    if lang == "bm":
+        send_message(phone,
+            f"📈 *RAMALAN JUALAN AI*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Ramalan dijana oleh AI berdasarkan data jualan sebenar awak_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            f"📈 *AI SALES FORECAST*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Forecast generated by AI based on your actual sales data_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Type *MENU* to go back"
+        )
+
+# ─────────────────────────────────────
+# 8️⃣ AI SUPPLY CHAIN TIPS
+# ─────────────────────────────────────
+def show_supply_chain_tips(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
+    sales = user_data.get("sales", [])
+    expenses = user_data.get("expenses", [])
+    total_sales = sum(s.get("amount", 0) for s in sales)
+    total_expenses = sum(e.get("amount", 0) for e in expenses)
+    profit_margin = round(((total_sales - total_expenses) / total_sales) * 100) if total_sales > 0 else 0
+
+    if lang == "bm":
+        send_message(phone, "📦 Sedang menganalisis rantaian bekalan awak...")
+    else:
+        send_message(phone, "📦 Analyzing your supply chain...")
+
+    # Build expense breakdown for AI
+    expense_list = "\n".join([f"- {e.get('date','?')}: {cur}{e.get('amount',0)} ({e.get('item','?')})" for e in expenses[-15:]])
+    sales_items = "\n".join([f"- {s.get('item','?')}: {cur}{s.get('amount',0)}" for s in sales[-10:]])
+
+    lang_instruction = "Bahasa Malaysia yang mudah" if lang == "bm" else "simple English"
+    prompt = f"""
+You are an AI supply chain advisor for small ASEAN businesses.
+Respond in {lang_instruction}.
+
+BUSINESS INFO:
+- Business: {user_data.get('business_name', '?')}
+- Product: {user_data.get('product', '?')}
+- Country: {cc['name']}, State: {user_data.get('user_state', '?')}
+- Total Sales: {cur}{total_sales}
+- Total Expenses: {cur}{total_expenses}
+- Profit Margin: {profit_margin}%
+
+EXPENSE RECORDS (what they buy/spend on):
+{expense_list if expense_list else "No expenses recorded yet"}
+
+WHAT THEY SELL:
+{sales_items}
+
+Provide EXACTLY this format:
+
+📦 *ANALISIS RANTAIAN BEKALAN*
+
+💰 *Kesihatan Kos:*
+• Margin keuntungan: {profit_margin}% — [assessment: sihat/perlu perhatian/kritikal]
+• Nisbah kos bahan: [analysis of their expense ratio]
+
+🏭 *Cadangan Pembekal & Inventori:*
+• [Tip 1 - specific to their product type, e.g. buy in bulk, find wholesale supplier]
+• [Tip 2 - inventory management tip]
+• [Tip 3 - seasonal stocking advice]
+
+📉 *Cara Kurangkan Kos:*
+• [Cost saving tip 1 based on their expenses]
+• [Cost saving tip 2]
+
+🤝 *Peluang Kerjasama:*
+• [Suggestion to partner with other MSMEs or join a cooperative]
+• [Platform/marketplace suggestion for their country]
+
+Keep it practical for a small {cc['name']} business. Reference their actual expense data.
+"""
+    response = client.models.generate_content(model=MODEL, contents=prompt)
+
+    if lang == "bm":
+        send_message(phone,
+            f"📦 *TIP RANTAIAN BEKALAN AI*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Analisis dijana oleh AI berdasarkan data perbelanjaan sebenar awak_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "💡 Rekod perbelanjaan awak untuk analisis lebih tepat!\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            f"📦 *AI SUPPLY CHAIN TIPS*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Analysis generated by AI based on your actual expense data_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "💡 Record your expenses for more accurate analysis!\n"
+            "Type *MENU* to go back"
+        )
+
+# ─────────────────────────────────────
+# 9️⃣ ASEAN CROSS-BORDER EXPORT GUIDE
+# ─────────────────────────────────────
+def show_export_guide(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    cur = cc["currency"]
+    sales = user_data.get("sales", [])
+    total_sales = sum(s.get("amount", 0) for s in sales)
+
+    if lang == "bm":
+        send_message(phone, "🌏 Sedang menganalisis peluang eksport ASEAN...")
+    else:
+        send_message(phone, "🌏 Analyzing ASEAN export opportunities...")
+
+    # Determine target markets (other ASEAN countries)
+    other_countries = {k: v for k, v in COUNTRY_CONFIG.items() if k != user_data.get("country", "MY")}
+    target_list = ", ".join([f"{v['flag']} {v['name']}" for v in other_countries.values()])
+
+    lang_instruction = "Bahasa Malaysia yang mudah" if lang == "bm" else "simple English"
+    prompt = f"""
+You are an ASEAN cross-border trade advisor for small businesses.
+Respond in {lang_instruction}.
+
+BUSINESS INFO:
+- Business: {user_data.get('business_name', '?')}
+- Product: {user_data.get('product', '?')}
+- Home Country: {cc['name']} ({cc['flag']})
+- State: {user_data.get('user_state', '?')}
+- Monthly Revenue: {user_data.get('monthly_revenue', '?')}
+- Total Recorded Sales: {cur}{total_sales}
+- Credit Score: {user_data.get('credit_score', 'N/A')}/100
+
+TARGET MARKETS: {target_list}
+
+Provide EXACTLY this format:
+
+🌏 *PANDUAN EKSPORT ASEAN*
+
+📊 *Penilaian Kesediaan Eksport:*
+• Kesediaan: [Sedia / Hampir sedia / Perlu persediaan] — [1 sentence why]
+
+🎯 *Pasaran Sasaran Terbaik:*
+• [Country 1] — [why their product fits this market, e.g. demand, cultural fit]
+• [Country 2] — [why]
+
+📋 *Langkah Untuk Mula Eksport:*
+1. [Step 1 - e.g. get export license, specific to their country]
+2. [Step 2 - e.g. find a distributor/platform]
+3. [Step 3 - e.g. comply with regulations]
+4. [Step 4 - e.g. logistics/shipping]
+
+💰 *Anggaran Kos Eksport:*
+• [Typical costs for a small MSME to start exporting from their country]
+
+🛒 *Platform E-Commerce Serantau:*
+• [2-3 actual ASEAN marketplace platforms relevant to their product, e.g. Shopee, Lazada, Tokopedia]
+
+⚖️ *Peraturan Penting:*
+• [1-2 key regulations, e.g. halal certification for food, ASEAN trade agreements]
+
+Keep it specific to their product ({user_data.get('product', '?')}) and their home country ({cc['name']}).
+Focus on practical, low-cost entry strategies for small MSMEs.
+Mention ASEAN Free Trade Area (AFTA) benefits where relevant.
+"""
+    response = client.models.generate_content(model=MODEL, contents=prompt)
+
+    if lang == "bm":
+        send_message(phone,
+            f"🌏 *PANDUAN EKSPORT ASEAN*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Panduan dijana oleh AI berdasarkan profil perniagaan awak_\n"
+            "🌐 _Memanfaatkan rangka kerja ASEAN Free Trade Area (AFTA)_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            f"🌏 *ASEAN EXPORT GUIDE*\n"
+            f"_{user_data.get('business_name', '')} — {cc['flag']} {user_data.get('user_state', cc['name'])}_\n\n"
+            f"{response.text}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🔬 _Guide generated by AI based on your business profile_\n"
+            "🌐 _Leveraging ASEAN Free Trade Area (AFTA) framework_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
             "Type *MENU* to go back"
         )
 
