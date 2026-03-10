@@ -225,6 +225,24 @@ def handle_text(phone, text):
         )
         return
 
+    # BATAL/CANCEL — exits any pending state (e.g. await_ssm_cert)
+    if text_upper in ["BATAL", "CANCEL"]:
+        current_state = user_data.get("state", "menu")
+        if current_state == "await_ssm_cert":
+            user_ref.update({"state": "menu"})
+            send_message(phone,
+                "❌ Pengesahan SSM dibatalkan.\n\nTaip *MENU* untuk kembali."
+                if lang == "bm" else
+                "❌ SSM verification cancelled.\n\nType *MENU* to go back."
+            )
+        else:
+            send_message(phone,
+                "Tiada tindakan untuk dibatalkan.\n\nTaip *MENU* untuk kembali."
+                if lang == "bm" else
+                "Nothing to cancel.\n\nType *MENU* to go back."
+            )
+        return
+
     # PROFIL command — works anytime
     if text_upper == "PROFIL" or text_upper == "PROFILE":
         show_profile(phone, user_ref)
@@ -253,6 +271,11 @@ def handle_text(phone, text):
     # RUJUK/REFER command — loan referral
     if text_upper in ["RUJUK", "REFER"]:
         show_loan_referral(phone, user_ref)
+        return
+
+    # VERIFY command — SSM/NIB/DTI certificate verification
+    if text_upper in ["VERIFY", "SAHKAN", "SSM", "NIB", "DTI"]:
+        prompt_ssm_verification(phone, user_ref)
         return
 
     # KEMASKINI/UPDATE command — re-answer credit questions
@@ -1502,18 +1525,79 @@ def show_certificate(phone, user_ref):
         )
 
 # ─────────────────────────────────────
+# SSM VERIFICATION PROMPT
+# ─────────────────────────────────────
+def prompt_ssm_verification(phone, user_ref):
+    user_data = user_ref.get().to_dict()
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    reg_type = cc["registration"]
+
+    # Already verified?
+    if user_data.get("ssm_verified"):
+        reg_number = user_data.get("ssm_reg_number", "N/A")
+        verified_date = user_data.get("ssm_verified_date", "N/A")
+        cert_biz = user_data.get("ssm_cert_business_name", "-")
+        if lang == "bm":
+            send_message(phone,
+                f"✅ *Perniagaan awak sudah disahkan!*\n\n"
+                f"🏢 Nama: {cert_biz}\n"
+                f"🔢 No. {reg_type}: {reg_number}\n"
+                f"📅 Tarikh Sahkan: {verified_date}\n\n"
+                "Taip *MENU* untuk kembali"
+            )
+        else:
+            send_message(phone,
+                f"✅ *Your business is already verified!*\n\n"
+                f"🏢 Name: {cert_biz}\n"
+                f"🔢 {reg_type} No: {reg_number}\n"
+                f"📅 Verified on: {verified_date}\n\n"
+                "Type *MENU* to go back"
+            )
+        return
+
+    # Prompt user to send cert image
+    user_ref.update({"state": "await_ssm_cert"})
+    if lang == "bm":
+        send_message(phone,
+            f"📄 *Sahkan Pendaftaran {reg_type} Awak*\n\n"
+            f"Hantar gambar sijil {reg_type} perniagaan awak.\n\n"
+            "✅ Pastikan:\n"
+            "• Gambar jelas dan tidak kabur\n"
+            "• Nombor pendaftaran kelihatan\n"
+            "• Nama perniagaan boleh dibaca\n\n"
+            f"📸 *Hantar gambar sijil {reg_type} sekarang*\n\n"
+            "Taip *BATAL* untuk batalkan"
+        )
+    else:
+        send_message(phone,
+            f"📄 *Verify Your {reg_type} Registration*\n\n"
+            f"Please send a photo of your {reg_type} business registration certificate.\n\n"
+            "✅ Make sure:\n"
+            "• Image is clear and not blurry\n"
+            "• Registration number is visible\n"
+            "• Business name is readable\n\n"
+            f"📸 *Send your {reg_type} certificate image now*\n\n"
+            "Type *CANCEL* to cancel"
+        )
+
+
+# ─────────────────────────────────────
 # HANDLE IMAGE
 # ─────────────────────────────────────
 def handle_image(phone, image_id):
     user_ref = db.collection("users").document(phone)
-    user_data = user_ref.get().to_dict() if user_ref.get().exists else {}
+    user_snap = user_ref.get()
+    user_data = user_snap.to_dict() if user_snap.exists else {}
     lang = user_data.get("language", "bm")
+    state = user_data.get("state", "menu")
 
     if lang == "bm":
         send_message(phone, "📸 Gambar diterima! Sedang menganalisis... ⏳")
     else:
         send_message(phone, "📸 Image received! Analyzing... ⏳")
 
+    # Download image from WhatsApp
     url = f"https://graph.facebook.com/v18.0/{image_id}"
     headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}"}
     media_info = requests.get(url, headers=headers).json()
@@ -1523,6 +1607,40 @@ def handle_image(phone, image_id):
     import PIL.Image
     img = PIL.Image.open(BytesIO(img_response.content))
 
+    # ── If user is in SSM verification flow, handle that first ──
+    if state == "await_ssm_cert":
+        handle_ssm_verification(phone, user_ref, user_data, img)
+        return
+
+    # ── Otherwise: triage — is this an SSM cert or a payment screenshot? ──
+    triage_prompt = """
+Analyze this image carefully. What type of document is it?
+
+Return ONLY valid JSON, nothing else:
+{
+  "doc_type": "ssm_cert" | "payment" | "other",
+  "confidence": "high" | "medium" | "low"
+}
+
+"ssm_cert" = Malaysian SSM business registration certificate, or NIB/DTI equivalent registration document
+"payment" = receipt, invoice, bank transfer, payment screenshot, QR payment confirmation
+"other" = anything else
+"""
+    triage_response = client.models.generate_content(model=MODEL, contents=[triage_prompt, img])
+    try:
+        triage_clean = triage_response.text.strip().replace("```json","").replace("```","")
+        triage_data = json.loads(triage_clean)
+    except:
+        triage_data = {"doc_type": "other", "confidence": "low"}
+
+    doc_type = triage_data.get("doc_type", "other")
+
+    if doc_type == "ssm_cert":
+        # Route to SSM verification
+        handle_ssm_verification(phone, user_ref, user_data, img)
+        return
+
+    # ── Default: payment screenshot flow ──
     prompt = """
     Analyze this image. Is this a payment screenshot or receipt?
     Return ONLY valid JSON nothing else:
@@ -1552,9 +1670,147 @@ def handle_image(phone, image_id):
             send_message(phone, f"✅ *Payment recorded from image!*\n\n💵 Amount: {get_currency(user_data)}{data['amount']}\n📦 Item: {data.get('item', 'Sale')}\n\nType *MENU* to go back")
     else:
         if lang == "bm":
-            send_message(phone, "Saya tidak dapat mengesan bayaran dalam gambar ini.\nCuba hantar screenshot yang lebih jelas.\n\nTaip *MENU* untuk kembali")
+            send_message(phone,
+                "Saya tidak dapat mengesan bayaran dalam gambar ini.\n"
+                "Cuba hantar screenshot yang lebih jelas.\n\n"
+                "💡 _Jika ini sijil SSM/pendaftaran perniagaan, taip *VERIFY* untuk sahkan perniagaan awak._\n\n"
+                "Taip *MENU* untuk kembali"
+            )
         else:
-            send_message(phone, "I could not detect a payment in this image.\nPlease send a clearer screenshot.\n\nType *MENU* to go back")
+            send_message(phone,
+                "I could not detect a payment in this image.\n"
+                "Please send a clearer screenshot.\n\n"
+                "💡 _If this is your SSM/business registration cert, type *VERIFY* to verify your business._\n\n"
+                "Type *MENU* to go back"
+            )
+
+
+# ─────────────────────────────────────
+# SSM / BUSINESS CERT VERIFICATION
+# ─────────────────────────────────────
+def handle_ssm_verification(phone, user_ref, user_data, img):
+    """Use Gemini Vision to extract and verify SSM/NIB/DTI certificate details."""
+    lang = user_data.get("language", "bm")
+    cc = get_country(user_data)
+    reg_type = cc["registration"]  # SSM / NIB / DTI
+    registered_business_name = user_data.get("business_name", "").strip().lower()
+
+    extract_prompt = f"""
+You are verifying a business registration certificate from {cc['name']}.
+The registration body is {reg_type}.
+
+Extract the following from this certificate image. Return ONLY valid JSON, nothing else:
+{{
+  "is_registration_cert": true or false,
+  "reg_number": "the registration/certificate number as shown",
+  "business_name": "exact business name as printed on the certificate",
+  "owner_name": "owner or director name if visible, else null",
+  "reg_date": "registration date if visible, else null",
+  "status": "active or unknown",
+  "cert_type": "type of registration e.g. Sole Proprietor, Partnership, Company, NIB, DTI etc."
+}}
+
+If this is NOT a {reg_type} registration certificate, set "is_registration_cert": false and leave other fields null.
+"""
+    response = client.models.generate_content(model=MODEL, contents=[extract_prompt, img])
+
+    try:
+        clean = response.text.strip().replace("```json","").replace("```","")
+        cert_data = json.loads(clean)
+    except:
+        cert_data = {"is_registration_cert": False}
+
+    if not cert_data.get("is_registration_cert"):
+        if lang == "bm":
+            send_message(phone,
+                f"❌ *Dokumen tidak dikenali sebagai sijil {reg_type}.*\n\n"
+                f"Sila hantar gambar sijil pendaftaran perniagaan {reg_type} yang jelas.\n\n"
+                "Taip *MENU* untuk kembali"
+            )
+        else:
+            send_message(phone,
+                f"❌ *Document not recognised as a {reg_type} registration certificate.*\n\n"
+                f"Please send a clear photo of your {reg_type} business registration certificate.\n\n"
+                "Type *MENU* to go back"
+            )
+        return
+
+    # Cross-check business name
+    cert_biz_name = (cert_data.get("business_name") or "").strip().lower()
+    reg_number = cert_data.get("reg_number", "N/A")
+    reg_date = cert_data.get("reg_date", "N/A")
+    cert_type = cert_data.get("cert_type", reg_type)
+    owner_on_cert = cert_data.get("owner_name", "")
+
+    # Fuzzy name match — check if registered_business_name words appear in cert name
+    name_match = False
+    if registered_business_name and cert_biz_name:
+        # Match if either name contains significant words from the other
+        reg_words = set(registered_business_name.split())
+        cert_words = set(cert_biz_name.split())
+        # Remove common filler words
+        stopwords = {"sdn","bhd","enterprise","trading","the","and","&","co","sdn.","bhd.","(m)"}
+        reg_words -= stopwords
+        cert_words -= stopwords
+        if reg_words and cert_words:
+            overlap = reg_words & cert_words
+            name_match = len(overlap) / max(len(reg_words), 1) >= 0.5
+        else:
+            name_match = True  # one name is all stopwords, give benefit of doubt
+
+    # Save verification result to Firestore
+    user_ref.update({
+        "has_ssm": "yes",
+        "ssm_verified": True,
+        "ssm_reg_number": reg_number,
+        "ssm_cert_type": cert_type,
+        "ssm_reg_date": reg_date,
+        "ssm_cert_business_name": cert_data.get("business_name", ""),
+        "ssm_name_match": name_match,
+        "ssm_verified_date": str(datetime.now().date()),
+    })
+
+    # Build verification result message
+    match_icon = "✅" if name_match else "⚠️"
+    match_note_bm = "Nama perniagaan *sepadan*!" if name_match else "Nama perniagaan *tidak sepadan sepenuhnya* dengan profil awak — sila kemaskini jika perlu."
+    match_note_en = "Business name *matches* your profile!" if name_match else "Business name *doesn't fully match* your profile — please update if needed."
+
+    if lang == "bm":
+        send_message(phone,
+            f"🎉 *Sijil {reg_type} Disahkan!*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"📋 *Butiran Sijil*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏢 Nama Perniagaan: *{cert_data.get('business_name', 'N/A')}*\n"
+            f"🔢 No. Pendaftaran: *{reg_number}*\n"
+            f"📄 Jenis: {cert_type}\n"
+            f"📅 Tarikh Daftar: {reg_date}\n"
+            + (f"👤 Nama Pemilik: {owner_on_cert}\n" if owner_on_cert else "") +
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{match_icon} {match_note_bm}\n\n"
+            "🏅 *+10 mata kredit* diberikan untuk pendaftaran perniagaan!\n\n"
+            "Taip *SKOR* untuk lihat skor kredit terbaru awak\n"
+            "Taip *MENU* untuk kembali"
+        )
+    else:
+        send_message(phone,
+            f"🎉 *{reg_type} Certificate Verified!*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"📋 *Certificate Details*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏢 Business Name: *{cert_data.get('business_name', 'N/A')}*\n"
+            f"🔢 Registration No: *{reg_number}*\n"
+            f"📄 Type: {cert_type}\n"
+            f"📅 Registration Date: {reg_date}\n"
+            + (f"👤 Owner Name: {owner_on_cert}\n" if owner_on_cert else "") +
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{match_icon} {match_note_en}\n\n"
+            "🏅 *+10 credit points* awarded for business registration!\n\n"
+            "Type *SCORE* to see your updated credit score\n"
+            "Type *MENU* to go back"
+        )
+    # Recalculate credit score automatically
+    generate_credit_score(phone, user_ref)
 
 # ─────────────────────────────────────
 # LOAN READINESS CHECKLIST
