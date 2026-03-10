@@ -84,6 +84,12 @@ COUNTRY_CONFIG = {
         "income_examples": "RM500, RM2000, RM5000",
         "sale_example_bm": "Jual 10 bekas kuih dapat RM150",
         "sale_example_en": "Sold 10 boxes of cookies for RM150",
+        "states": {
+            "1": "Johor", "2": "Kedah", "3": "Kelantan", "4": "Melaka",
+            "5": "Negeri Sembilan", "6": "Pahang", "7": "Perak", "8": "Perlis",
+            "9": "Pulau Pinang", "10": "Sabah", "11": "Sarawak", "12": "Selangor",
+            "13": "Terengganu", "14": "KL", "15": "Putrajaya", "16": "Labuan",
+        },
     },
     "ID": {
         "name": "Indonesia",
@@ -99,6 +105,11 @@ COUNTRY_CONFIG = {
         "income_examples": "Rp2jt, Rp5jt, Rp10jt",
         "sale_example_bm": "Jual 10 bungkus nasi dapat Rp500rb",
         "sale_example_en": "Sold 10 packs of food for Rp500k",
+        "states": {
+            "1": "Jakarta", "2": "Jawa Barat", "3": "Jawa Tengah", "4": "Jawa Timur",
+            "5": "Bali", "6": "Sumatera Utara", "7": "Sumatera Barat", "8": "Sumatera Selatan",
+            "9": "Kalimantan", "10": "Sulawesi", "11": "Papua", "12": "Yogyakarta",
+        },
     },
     "PH": {
         "name": "Philippines",
@@ -114,6 +125,11 @@ COUNTRY_CONFIG = {
         "income_examples": "₱10k, ₱30k, ₱50k",
         "sale_example_bm": "Jual 10 item dapat ₱5000",
         "sale_example_en": "Sold 10 items for ₱5000",
+        "states": {
+            "1": "Metro Manila", "2": "Cebu", "3": "Davao", "4": "Calabarzon",
+            "5": "Central Luzon", "6": "Western Visayas", "7": "Central Visayas",
+            "8": "Northern Mindanao", "9": "Ilocos", "10": "Bicol",
+        },
     },
 }
 
@@ -302,10 +318,41 @@ def handle_text(phone, text):
         if text_upper in country_map:
             code = country_map[text_upper]
             cc = COUNTRY_CONFIG[code]
-            user_ref.update({"country": code, "state": "ask_owner_name"})
+            user_ref.update({"country": code, "state": "ask_state"})
+            # Build state list
+            states = cc.get("states", {})
+            state_list = "\n".join([f"{k}️⃣ {v}" for k, v in sorted(states.items(), key=lambda x: int(x[0]))])
+            max_num = len(states)
             if lang == "bm":
                 send_message(phone,
                     f"{cc['flag']} *{cc['name']} dipilih!*\n\n"
+                    f"📍 *Di negeri/wilayah mana awak beroperasi?*\n\n"
+                    f"{state_list}\n\n"
+                    f"_Balas dengan nombor (1-{max_num})_"
+                )
+            else:
+                send_message(phone,
+                    f"{cc['flag']} *{cc['name']} selected!*\n\n"
+                    f"📍 *Which state/region do you operate in?*\n\n"
+                    f"{state_list}\n\n"
+                    f"_Reply with a number (1-{max_num})_"
+                )
+        else:
+            if lang == "bm":
+                send_message(phone, "Sila pilih 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
+            else:
+                send_message(phone, "Please choose 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
+
+    elif state == "ask_state":
+        user_data_now = user_ref.get().to_dict()
+        cc = get_country(user_data_now)
+        states = cc.get("states", {})
+        if text_upper in states:
+            state_name = states[text_upper]
+            user_ref.update({"user_state": state_name, "state": "ask_owner_name"})
+            if lang == "bm":
+                send_message(phone,
+                    f"📍 *{state_name}* — noted!\n\n"
                     f"Mata wang: {cc['currency']}\n"
                     f"Program pinjaman: {cc['loan_program']}\n"
                     f"Pendaftaran: {cc['registration']}\n\n"
@@ -314,7 +361,7 @@ def handle_text(phone, text):
                 )
             else:
                 send_message(phone,
-                    f"{cc['flag']} *{cc['name']} selected!*\n\n"
+                    f"📍 *{state_name}* — noted!\n\n"
                     f"Currency: {cc['currency']}\n"
                     f"Loan program: {cc['loan_program']}\n"
                     f"Registration: {cc['registration']}\n\n"
@@ -322,10 +369,11 @@ def handle_text(phone, text):
                     "Question 1️⃣: What is your *name*?"
                 )
         else:
+            max_num = len(states)
             if lang == "bm":
-                send_message(phone, "Sila pilih 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
+                send_message(phone, f"Sila pilih nombor 1-{max_num} sahaja.")
             else:
-                send_message(phone, "Please choose 1-3:\n1️⃣ 🇲🇾 Malaysia\n2️⃣ 🇮🇩 Indonesia\n3️⃣ 🇵🇭 Philippines")
+                send_message(phone, f"Please choose a number from 1-{max_num}.")
 
     elif state == "ask_owner_name":
         user_ref.update({"owner_name": text, "state": "ask_business_name"})
@@ -1323,6 +1371,7 @@ def show_profile(phone, user_ref):
             f"🏪 Perniagaan: {user_data.get('business_name', '-')}\n"
             f"📦 Produk: {user_data.get('product', '-')}\n"
             f"🌏 Negara: {cc['flag']} {cc['name']}\n"
+            f"📍 Negeri: {user_data.get('user_state', '-')}\n"
             f"💵 Pendapatan Bulanan: {user_data.get('monthly_revenue', '-')}\n"
             f"⏱️ Lama Beroperasi: {user_data.get('biz_age', '-')}\n"
             f"🏦 Akaun Bank: {user_data.get('has_bank_account', '-')}\n"
@@ -1345,6 +1394,7 @@ def show_profile(phone, user_ref):
             f"🏪 Business: {user_data.get('business_name', '-')}\n"
             f"📦 Product: {user_data.get('product', '-')}\n"
             f"🌏 Country: {cc['flag']} {cc['name']}\n"
+            f"📍 State: {user_data.get('user_state', '-')}\n"
             f"💵 Monthly Income: {user_data.get('monthly_revenue', '-')}\n"
             f"⏱️ Years Operating: {user_data.get('biz_age', '-')}\n"
             f"🏦 Bank Account: {user_data.get('has_bank_account', '-')}\n"
@@ -1933,7 +1983,8 @@ def show_loan_referral(phone, user_ref):
         f"• Perniagaan: {biz}\n"
         f"• Produk/Perkhidmatan: {product}\n"
         f"• Pendapatan Bulanan: {revenue}\n"
-        f"• Negara: {cc['flag']} {cc['name']}\n\n"
+        f"• Negara: {cc['flag']} {cc['name']}\n"
+        f"• Negeri: {user_data.get('user_state', '-')}\n\n"
         f"REKOD KEWANGAN (BizBuddy):\n"
         f"• Jumlah Jualan Direkod: {cur}{total_sales}\n"
         f"• Bilangan Transaksi: {txn_count}\n"
@@ -1954,7 +2005,8 @@ def show_loan_referral(phone, user_ref):
         f"• Business: {biz}\n"
         f"• Product/Service: {product}\n"
         f"• Monthly Income: {revenue}\n"
-        f"• Country: {cc['flag']} {cc['name']}\n\n"
+        f"• Country: {cc['flag']} {cc['name']}\n"
+        f"• State: {user_data.get('user_state', '-')}\n\n"
         f"FINANCIAL RECORDS (BizBuddy):\n"
         f"• Total Recorded Sales: {cur}{total_sales}\n"
         f"• Number of Transactions: {txn_count}\n"
@@ -2016,4 +2068,4 @@ def send_message(phone, text):
     requests.post(url, headers=headers, json=payload)
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=5000, debug=False)
