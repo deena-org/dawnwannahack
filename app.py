@@ -281,11 +281,6 @@ def handle_text(phone, text):
         show_loan_referral(phone, user_ref)
         return
 
-    # VERIFY command — SSM/NIB/DTI certificate verification
-    if text_upper in ["VERIFY", "SAHKAN", "SSM", "NIB", "DTI"]:
-        prompt_ssm_verification(phone, user_ref)
-        return
-
     # LANGKAU/SKIP — skip any pending verification (but allow content_generate state to pass through)
     if text_upper in ["LANGKAU", "SKIP"]:
         current_state = user_data.get("state", "menu")
@@ -972,7 +967,6 @@ def handle_menu(phone, text, user_ref):
                 "💡 Taip *PECAHAN* untuk pecahan skor\n"
                 "💡 Taip *PINJAMAN* untuk semak kelayakan\n"
                 "💡 Taip *RUJUK* untuk rujukan pinjaman\n"
-                "🔐 Taip *SAHKAN* untuk sahkan sijil SSM\n"
                 "💡 Taip *ENGLISH* untuk tukar bahasa\n"
                 "🔒 Taip *DATA* untuk lihat data yang disimpan\n\n"
                 "_Balas dengan nombor pilihan_"
@@ -993,7 +987,6 @@ def handle_menu(phone, text, user_ref):
                 "💡 Type *BREAKDOWN* for score breakdown\n"
                 "💡 Type *LOAN* to check eligibility\n"
                 "💡 Type *REFER* for loan referral\n"
-                "🔐 Type *VERIFY* to verify SSM certificate\n"
                 "💡 Type *BM* to switch to Bahasa Malaysia\n"
                 "🔒 Type *DATA* to view your stored data\n\n"
                 "_Reply with your choice number_"
