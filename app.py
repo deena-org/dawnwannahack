@@ -286,12 +286,15 @@ def handle_text(phone, text):
         prompt_ssm_verification(phone, user_ref)
         return
 
-    # LANGKAU/SKIP — skip any pending verification
+    # LANGKAU/SKIP — skip any pending verification (but allow content_generate state to pass through)
     if text_upper in ["LANGKAU", "SKIP"]:
         current_state = user_data.get("state", "menu")
-        user_data_now = user_ref.get().to_dict()
-        cc = get_country(user_data_now)
-        if current_state == "await_ssm_cert_then_score":
+        
+        # Allow SKIP to pass through to content generator
+        if current_state == "content_generate":
+            # Don't intercept - let it go to handle_content_generate
+            pass
+        elif current_state == "await_ssm_cert_then_score":
             # Skipped during credit flow — 7 pts, auto-generate score
             user_ref.update({"state": "menu"})
             if lang == "bm":
@@ -299,31 +302,37 @@ def handle_text(phone, text):
             else:
                 send_message(phone, "⏭️ SSM verification skipped (7 pts instead of 10).\n\n⏳ Calculating your credit score...")
             generate_credit_score(phone, user_ref)
+            return
         elif current_state == "await_ssm_cert":
             user_ref.update({"state": "menu"})
             if lang == "bm":
                 send_message(phone, "⏭️ Pengesahan SSM dilangkau.\n\nTaip *MENU* untuk kembali")
             else:
                 send_message(phone, "⏭️ SSM verification skipped.\n\nType *MENU* to go back")
+            return
         elif current_state == "await_bank_doc_then_reg":
             # Self-declared bank = 7 pts, then move to SSM question
+            user_data_now = user_ref.get().to_dict()
+            cc = get_country(user_data_now)
             user_ref.update({"state": "credit_q3"})
             if lang == "bm":
                 send_message(phone, f"⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nSoalan 3️⃣: {cc['reg_question_bm']}\n_(Balas: Ya / Tidak)_")
             else:
                 send_message(phone, f"⏭️ Bank verification skipped (7 pts instead of 10).\n\nQuestion 3️⃣: {cc['reg_question_en']}\n_(Reply: Yes / No)_")
+            return
         elif current_state in ("await_bank_doc_then_score", "await_bank_doc"):
             user_ref.update({"state": "menu"})
             if lang == "bm":
                 send_message(phone, "⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nTaip *MENU* untuk kembali")
             else:
                 send_message(phone, "⏭️ Bank verification skipped (7 pts instead of 10).\n\nType *MENU* to go back")
+            return
         else:
             if lang == "bm":
                 send_message(phone, "Tiada tindakan untuk dilangkau.\n\nTaip *MENU* untuk kembali.")
             else:
                 send_message(phone, "Nothing to skip.\n\nType *MENU* to go back.")
-        return
+            return
 
     # KEMASKINI/UPDATE command — re-answer credit questions
     if text_upper in ["KEMASKINI", "UPDATE"]:
@@ -994,9 +1003,23 @@ def handle_menu(phone, text, user_ref):
     elif t_upper == "1":
         user_ref.update({"state": "log_sale"})
         if lang == "bm":
-            send_message(phone, f"💰 *Rekod Jualan*\n\nCeritakan jualan awak hari ini.\n_(Contoh: {cc['sale_example_bm']})_")
+            send_message(phone, 
+                f"💰 *Rekod Jualan*\n\n"
+                f"Ceritakan jualan awak hari ini:\n\n"
+                f"✍️ *Taip* jualan awak\n"
+                f"_(Contoh: {cc['sale_example_bm']})_\n\n"
+                f"📸 *ATAU hantar gambar* resit/screenshot bayaran\n\n"
+                f"_(Taip MENU untuk kembali)_"
+            )
         else:
-            send_message(phone, f"💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: {cc['sale_example_en']})_")
+            send_message(phone, 
+                f"💰 *Record Sales*\n\n"
+                f"Tell me about your sales today:\n\n"
+                f"✍️ *Type* your sale\n"
+                f"_(Example: {cc['sale_example_en']})_\n\n"
+                f"📸 *OR send a photo* of receipt/payment screenshot\n\n"
+                f"_(Type MENU to go back)_"
+            )
     elif t_upper == "2":
         check_data = user_ref.get().to_dict()
         has_answers = check_data.get("biz_age") and check_data.get("has_bank_account") and check_data.get("has_ssm")
@@ -1045,10 +1068,21 @@ def handle_menu(phone, text, user_ref):
         else:
             send_message(phone, f"🤖 *AI Business Advisor*\n\nAsk me anything! Examples:\n• How do I set my prices?\n• How do I apply for a {cc['loan_program']} loan?\n• How do I promote online?\n\n_(Type MENU to go back)_")
     elif t_upper == "4":
+        user_ref.update({"state": "log_sale"})
         if lang == "bm":
-            send_message(phone, "📸 *Hantar Gambar Resit*\n\nHantar gambar resit atau screenshot bayaran WhatsApp awak.\nSaya akan rekod jualan awak secara automatik!\n\n_(Taip MENU untuk kembali)_")
+            send_message(phone, 
+                "📸 *Hantar Gambar Resit*\n\n"
+                "Hantar gambar resit atau screenshot bayaran.\n"
+                "Saya akan rekod jualan awak secara automatik!\n\n"
+                "_(Taip MENU untuk kembali)_"
+            )
         else:
-            send_message(phone, "📸 *Send Receipt Photo*\n\nSend a photo of your receipt or WhatsApp payment screenshot.\nI will automatically record your sale!\n\n_(Type MENU to go back)_")
+            send_message(phone, 
+                "📸 *Send Receipt Photo*\n\n"
+                "Send a photo of your receipt or payment screenshot.\n"
+                "I will automatically record your sale!\n\n"
+                "_(Type MENU to go back)_"
+            )
     elif t_upper == "5":
         show_sales_summary(phone, user_ref)
     elif t_upper == "6":
@@ -2448,7 +2482,8 @@ Include ideas relevant to Malaysian culture (Raya, Ramadan, Merdeka, etc if appl
             f"{response.text}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "📋 *Copy dan paste terus!*\n\n"
-            "Nak jana lagi?\n"
+            "✨ *Jana Kandungan Media Sosial*\n\n"
+            "Nak jana lagi? Pilih jenis kandungan:\n\n"
             "1️⃣ Caption Instagram\n"
             "2️⃣ WhatsApp Blast\n"
             "3️⃣ Skrip TikTok\n"
@@ -2463,7 +2498,8 @@ Include ideas relevant to Malaysian culture (Raya, Ramadan, Merdeka, etc if appl
             f"{response.text}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "📋 *Copy and paste directly!*\n\n"
-            "Generate more?\n"
+            "✨ *Social Media Content Generator*\n\n"
+            "Generate more? Choose content type:\n\n"
             "1️⃣ Instagram Caption\n"
             "2️⃣ WhatsApp Blast\n"
             "3️⃣ TikTok Script\n"
