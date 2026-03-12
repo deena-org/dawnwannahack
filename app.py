@@ -962,12 +962,11 @@ def handle_menu(phone, text, user_ref):
                 "1️⃣ Rekod Jualan Hari Ini\n"
                 "2️⃣ Jana Skor Kredit Saya\n"
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
-                "4️⃣ Hantar Gambar Resit/Bayaran\n"
-                "5️⃣ Ringkasan Jualan Saya\n"
-                "6️⃣ Jana Kandungan Media Sosial\n"
-                "7️⃣ 📈 Ramalan Jualan AI\n"
-                "8️⃣ 📦 Tip Rantaian Bekalan AI\n"
-                "9️⃣ 🌏 Panduan Eksport ASEAN\n\n"
+                "4️⃣ Ringkasan Jualan Saya\n"
+                "5️⃣ Jana Kandungan Media Sosial\n"
+                "6️⃣ 📈 Ramalan Jualan AI\n"
+                "7️⃣ 📦 Tip Rantaian Bekalan AI\n"
+                "8️⃣ 🌏 Panduan Eksport ASEAN\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
                 "💡 Taip *PECAHAN* untuk pecahan skor\n"
@@ -984,12 +983,11 @@ def handle_menu(phone, text, user_ref):
                 "1️⃣ Record Today's Sales\n"
                 "2️⃣ Generate My Credit Score\n"
                 "3️⃣ Ask Business Question (AI)\n"
-                "4️⃣ Send Receipt/Payment Photo\n"
-                "5️⃣ My Sales Summary\n"
-                "6️⃣ Generate Social Media Content\n"
-                "7️⃣ 📈 AI Sales Forecast\n"
-                "8️⃣ 📦 AI Supply Chain Tips\n"
-                "9️⃣ 🌏 ASEAN Export Guide\n\n"
+                "4️⃣ My Sales Summary\n"
+                "5️⃣ Generate Social Media Content\n"
+                "6️⃣ 📈 AI Sales Forecast\n"
+                "7️⃣ 📦 AI Supply Chain Tips\n"
+                "8️⃣ 🌏 ASEAN Export Guide\n\n"
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
                 "💡 Type *BREAKDOWN* for score breakdown\n"
@@ -1068,24 +1066,8 @@ def handle_menu(phone, text, user_ref):
         else:
             send_message(phone, f"🤖 *AI Business Advisor*\n\nAsk me anything! Examples:\n• How do I set my prices?\n• How do I apply for a {cc['loan_program']} loan?\n• How do I promote online?\n\n_(Type MENU to go back)_")
     elif t_upper == "4":
-        user_ref.update({"state": "log_sale"})
-        if lang == "bm":
-            send_message(phone, 
-                "📸 *Hantar Gambar Resit*\n\n"
-                "Hantar gambar resit atau screenshot bayaran.\n"
-                "Saya akan rekod jualan awak secara automatik!\n\n"
-                "_(Taip MENU untuk kembali)_"
-            )
-        else:
-            send_message(phone, 
-                "📸 *Send Receipt Photo*\n\n"
-                "Send a photo of your receipt or payment screenshot.\n"
-                "I will automatically record your sale!\n\n"
-                "_(Type MENU to go back)_"
-            )
-    elif t_upper == "5":
         show_sales_summary(phone, user_ref)
-    elif t_upper == "6":
+    elif t_upper == "5":
         user_ref.update({"state": "content_menu"})
         if lang == "bm":
             send_message(phone,
@@ -1109,11 +1091,11 @@ def handle_menu(phone, text, user_ref):
                 "5️⃣ Seasonal Promotion Ideas\n\n"
                 "_(Type MENU to go back)_"
             )
-    elif t_upper == "7":
+    elif t_upper == "6":
         show_sales_forecast(phone, user_ref)
-    elif t_upper == "8":
+    elif t_upper == "7":
         show_supply_chain_tips(phone, user_ref)
-    elif t_upper == "9":
+    elif t_upper == "8":
         show_export_guide(phone, user_ref)
     else:
         if lang == "bm":
@@ -2579,13 +2561,13 @@ def show_loan_referral(phone, user_ref):
     cur = cc["currency"]
     score = user_data.get("credit_score", 0)
 
-    if not score or score < 60:
-        needed = 60 - (score or 0)
+    if not score or score < 70:
+        needed = 70 - (score or 0)
         if lang == "bm":
             send_message(phone,
                 f"⚠️ *Skor kredit awak belum mencukupi untuk rujukan pinjaman.*\n\n"
                 f"Skor semasa: {score or 0}/100\n"
-                f"Skor minimum: 60/100\n"
+                f"Skor minimum: 70/100\n"
                 f"Perlukan: +{needed} lagi mata\n\n"
                 "💡 Cara tingkatkan skor:\n"
                 "• Rekod lebih banyak jualan setiap hari\n"
@@ -2599,7 +2581,7 @@ def show_loan_referral(phone, user_ref):
             send_message(phone,
                 f"⚠️ *Your credit score is not yet sufficient for loan referral.*\n\n"
                 f"Current score: {score or 0}/100\n"
-                f"Minimum required: 60/100\n"
+                f"Minimum required: 70/100\n"
                 f"Need: +{needed} more points\n\n"
                 "💡 How to improve:\n"
                 "• Record more sales daily\n"
