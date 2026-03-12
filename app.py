@@ -19,7 +19,7 @@ WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-2.0-flash"
 
 firebase_creds_str = os.getenv("FIREBASE_CREDENTIALS_BASE64")
 firebase_creds = json_module.loads(base64.b64decode(firebase_creds_str).decode())
@@ -44,6 +44,7 @@ def verify():
 @app.route("/webhook", methods=["POST"])
 def receive():
     data = request.get_json()
+    phone = None
     try:
         entry = data["entry"][0]["changes"][0]["value"]
         if "messages" in entry:
@@ -54,7 +55,14 @@ def receive():
             elif msg["type"] == "image":
                 handle_image(phone, msg["image"]["id"])
     except Exception as e:
-        print(f"Error: {e}")
+        import traceback
+        print(f"[ERROR] {e}")
+        print(traceback.format_exc())
+        if phone:
+            try:
+                send_message(phone, "⚠️ Maaf, berlaku ralat teknikal. Sila cuba lagi.\n\nSorry, a technical error occurred. Please try again.")
+            except:
+                pass
     return jsonify({"status": "ok"}), 200
 
 # ─────────────────────────────────────
@@ -278,22 +286,31 @@ def handle_text(phone, text):
         prompt_ssm_verification(phone, user_ref)
         return
 
-    # LANGKAU/SKIP — skip SSM cert upload, proceed to score
+    # LANGKAU/SKIP — skip any pending verification
     if text_upper in ["LANGKAU", "SKIP"]:
         current_state = user_data.get("state", "menu")
-        if current_state == "await_ssm_cert_then_score":
+        user_data_now = user_ref.get().to_dict()
+        cc = get_country(user_data_now)
+        if current_state in ("await_ssm_cert", "await_ssm_cert_then_score"):
+            # Self-declared SSM = 7 pts
             user_ref.update({"state": "menu"})
             if lang == "bm":
-                send_message(phone, "⏭️ Pengesahan SSM dilangkau.\n\nSkor dikira tanpa pengesahan sijil.\n\n⏳ Sedang mengira skor kredit awak...")
+                send_message(phone, "⏭️ Pengesahan SSM dilangkau (7 mata, bukan 10).\n\nTaip *SKOR* untuk lihat skor kredit\nTaip *MENU* untuk kembali")
             else:
-                send_message(phone, "⏭️ SSM verification skipped.\n\nScore calculated without certificate verification.\n\n⏳ Calculating your credit score...")
-            generate_credit_score(phone, user_ref)
-        elif current_state == "await_ssm_cert":
+                send_message(phone, "⏭️ SSM verification skipped (7 pts instead of 10).\n\nType *SCORE* to view credit score\nType *MENU* to go back")
+        elif current_state == "await_bank_doc_then_reg":
+            # Self-declared bank = 7 pts, then move to SSM question
+            user_ref.update({"state": "credit_q3"})
+            if lang == "bm":
+                send_message(phone, f"⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nSoalan 3️⃣: {cc['reg_question_bm']}\n_(Balas: Ya / Tidak)_")
+            else:
+                send_message(phone, f"⏭️ Bank verification skipped (7 pts instead of 10).\n\nQuestion 3️⃣: {cc['reg_question_en']}\n_(Reply: Yes / No)_")
+        elif current_state in ("await_bank_doc_then_score", "await_bank_doc"):
             user_ref.update({"state": "menu"})
             if lang == "bm":
-                send_message(phone, "⏭️ Pengesahan SSM dilangkau.\n\nTaip *MENU* untuk kembali.")
+                send_message(phone, "⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nTaip *MENU* untuk kembali")
             else:
-                send_message(phone, "⏭️ SSM verification skipped.\n\nType *MENU* to go back.")
+                send_message(phone, "⏭️ Bank verification skipped (7 pts instead of 10).\n\nType *MENU* to go back")
         else:
             if lang == "bm":
                 send_message(phone, "Tiada tindakan untuk dilangkau.\n\nTaip *MENU* untuk kembali.")
@@ -575,7 +592,26 @@ Return ONLY the extracted keywords, nothing else.
         YES_ANSWERS = {"ya", "yes", "y", "sudah", "ada", "dah", "yep", "yup", "ye"}
         NO_ANSWERS = {"tidak", "no", "n", "belum", "tak", "tiada", "nope"}
         if text_upper.lower() in YES_ANSWERS:
-            user_ref.update({"has_bank_account": "yes", "state": "credit_update_reg"})
+            user_ref.update({"has_bank_account": "yes", "state": "await_bank_doc_then_reg"})
+            if lang == "bm":
+                send_message(phone,
+                    "🏦 *Sahkan Akaun Bank Awak*\n\n"
+                    "Hantar screenshot atau gambar:\n"
+                    "• Penyata bank\n• Buku bank (passbook)\n• Online banking\n• E-wallet (TNG, GoPay, dll)\n\n"
+                    "✅ Pastikan *nama pemegang akaun* kelihatan.\n\n"
+                    "📸 *Hantar gambar sekarang*\n\n"
+                    "Taip *LANGKAU* untuk langkau (7 mata, bukan 10)"
+                )
+            else:
+                send_message(phone,
+                    "🏦 *Verify Your Bank Account*\n\n"
+                    "Send a screenshot or photo of:\n"
+                    "• Bank statement\n• Passbook\n• Online banking\n• E-wallet (TNG, GoPay, etc)\n\n"
+                    "✅ Make sure *account holder name* is visible.\n\n"
+                    "📸 *Send the image now*\n\n"
+                    "Type *SKIP* to skip (7 pts instead of 10)"
+                )
+            return
         elif text_upper.lower() in NO_ANSWERS:
             user_ref.update({"has_bank_account": "no", "state": "credit_update_reg"})
         else:
@@ -641,7 +677,26 @@ Return ONLY the extracted keywords, nothing else.
         YES_ANSWERS = {"ya", "yes", "y", "sudah", "ada", "dah", "yep", "yup", "ye"}
         NO_ANSWERS = {"tidak", "no", "n", "belum", "tak", "tiada", "nope"}
         if text_upper.lower() in YES_ANSWERS:
-            user_ref.update({"has_bank_account": "yes", "state": "credit_q3"})
+            user_ref.update({"has_bank_account": "yes", "state": "await_bank_doc_then_reg"})
+            if lang == "bm":
+                send_message(phone,
+                    "🏦 *Sahkan Akaun Bank Awak*\n\n"
+                    "Hantar screenshot atau gambar:\n"
+                    "• Penyata bank\n• Buku bank (passbook)\n• Online banking\n• E-wallet (TNG, GoPay, dll)\n\n"
+                    "✅ Pastikan *nama pemegang akaun* kelihatan.\n\n"
+                    "📸 *Hantar gambar sekarang*\n\n"
+                    "Taip *LANGKAU* untuk langkau (7 mata, bukan 10)"
+                )
+            else:
+                send_message(phone,
+                    "🏦 *Verify Your Bank Account*\n\n"
+                    "Send a screenshot or photo of:\n"
+                    "• Bank statement\n• Passbook\n• Online banking\n• E-wallet (TNG, GoPay, etc)\n\n"
+                    "✅ Make sure *account holder name* is visible.\n\n"
+                    "📸 *Send the image now*\n\n"
+                    "Type *SKIP* to skip (7 pts instead of 10)"
+                )
+            return
         elif text_upper.lower() in NO_ANSWERS:
             user_ref.update({"has_bank_account": "no", "state": "credit_q3"})
         else:
@@ -1256,20 +1311,22 @@ def calculate_credit_score(user_data):
     formal_score = 0
     has_ssm = user_data.get("has_ssm", "").lower()
     has_bank = user_data.get("has_bank_account", "").lower()
+    ssm_verified = user_data.get("ssm_verified", False)
+    bank_verified = user_data.get("bank_verified", False)
 
-    if has_ssm.startswith("y") or has_ssm.startswith("s"):  # ya/yes/sudah
-        formal_score += 10
-    elif has_ssm.startswith("t") or has_ssm.startswith("n"):  # tidak/no
+    if has_ssm.startswith("y") or has_ssm.startswith("s"):
+        formal_score += 10 if ssm_verified else 7
+    elif has_ssm.startswith("t") or has_ssm.startswith("n"):
         formal_score += 0
     else:
-        formal_score += 2  # unknown
+        formal_score += 2
 
-    if has_bank.startswith("y") or has_bank.startswith("a"):  # ya/yes/ada
-        formal_score += 10
-    elif has_bank.startswith("t") or has_bank.startswith("n"):  # tidak/no
+    if has_bank.startswith("y") or has_bank.startswith("a"):
+        formal_score += 10 if bank_verified else 7
+    elif has_bank.startswith("t") or has_bank.startswith("n"):
         formal_score += 0
     else:
-        formal_score += 2  # unknown
+        formal_score += 2
     breakdown["formalization"] = min(formal_score, 20)
 
     # 5. RECORD VOLUME (10 pts)
@@ -1716,9 +1773,13 @@ def handle_image(phone, image_id):
     import PIL.Image
     img = PIL.Image.open(BytesIO(img_response.content))
 
-    # ── If user is in SSM verification flow, handle that first ──
+    # ── Route based on current state ──
     if state in ("await_ssm_cert", "await_ssm_cert_then_score"):
-        handle_ssm_verification(phone, user_ref, user_data, img, after_score=(state == "await_ssm_cert_then_score"))
+        handle_ssm_verification(phone, user_ref, user_data, img)
+        return
+
+    if state in ("await_bank_doc_then_reg", "await_bank_doc_then_score", "await_bank_doc"):
+        handle_bank_verification(phone, user_ref, user_data, img, mode=state)
         return
 
     # ── Otherwise: triage — is this an SSM cert or a payment screenshot? ──
@@ -1897,8 +1958,9 @@ If this is NOT a {reg_type} registration certificate, set "is_registration_cert"
             + (f"👤 Nama Pemilik: {owner_on_cert}\n" if owner_on_cert else "") +
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"{match_icon} {match_note_bm}\n\n"
-            "🏅 *+10 mata kredit* diberikan untuk pendaftaran perniagaan!\n\n"
-            + ("⏳ Sedang mengira skor kredit awak..." if after_score else "Taip *SKOR* untuk lihat skor kredit terbaru awak\nTaip *MENU* untuk kembali")
+            "🏅 *+10 mata kredit* untuk pengesahan sijil!\n\n"
+            "Taip *SKOR* untuk lihat skor kredit terbaru awak\n"
+            "Taip *MENU* untuk kembali ke menu"
         )
     else:
         send_message(phone,
@@ -1913,11 +1975,165 @@ If this is NOT a {reg_type} registration certificate, set "is_registration_cert"
             + (f"👤 Owner Name: {owner_on_cert}\n" if owner_on_cert else "") +
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"{match_icon} {match_note_en}\n\n"
-            "🏅 *+10 credit points* awarded for business registration!\n\n"
-            + ("⏳ Calculating your credit score..." if after_score else "Type *SCORE* to see your updated credit score\nType *MENU* to go back")
+            "🏅 *+10 credit points* for certificate verification!\n\n"
+            "Type *SCORE* to see your updated credit score\n"
+            "Type *MENU* to go back"
         )
-    # Always recalculate score; if after_score, this IS the credit score generation step
-    generate_credit_score(phone, user_ref)
+    # Reset state to menu — user decides when to view score
+    user_ref.update({"state": "menu"})
+
+# ─────────────────────────────────────
+# BANK ACCOUNT VERIFICATION
+# ─────────────────────────────────────
+def handle_bank_verification(phone, user_ref, user_data, img, mode="await_bank_doc_then_reg"):
+    """Triage then extract bank account document. mode controls what happens after."""
+    lang = user_data.get("language", "bm")
+    owner_name = user_data.get("owner_name", "").strip().lower()
+
+    # Step 1: Triage
+    triage_prompt = """Analyze this image. What type of financial document is it?
+Return ONLY valid JSON:
+{"doc_type": "bank_statement" | "passbook" | "online_banking" | "e_wallet" | "other", "confidence": "high" | "medium" | "low"}
+bank_statement = printed or PDF bank statement
+passbook = physical bank savings book
+online_banking = mobile/web banking app screenshot (Maybank2u, BCA Mobile, BDO, CIMB etc)
+e_wallet = e-wallet screenshot (Touch n Go, GoPay, GCash, Maya, Dana)
+other = anything else (receipt, SSM cert, ID, photo)"""
+
+    triage_resp = client.models.generate_content(model=MODEL, contents=[triage_prompt, img])
+    try:
+        triage_data = json.loads(triage_resp.text.strip().replace("```json","").replace("```",""))
+    except:
+        triage_data = {"doc_type": "other"}
+
+    doc_type = triage_data.get("doc_type", "other")
+
+    if doc_type == "other":
+        if lang == "bm":
+            send_message(phone,
+                "❌ *Dokumen tidak dikenali sebagai dokumen kewangan.*\n\n"
+                "Sila hantar:\n"
+                "• Screenshot penyata bank\n"
+                "• Gambar buku bank (passbook)\n"
+                "• Screenshot online banking / e-wallet\n\n"
+                "Taip *LANGKAU* jika tidak mahu sahkan sekarang"
+            )
+        else:
+            send_message(phone,
+                "❌ *Document not recognised as a financial document.*\n\n"
+                "Please send:\n"
+                "• Bank statement screenshot\n"
+                "• Bank book (passbook) photo\n"
+                "• Online banking / e-wallet screenshot\n\n"
+                "Type *SKIP* if you don't want to verify now"
+            )
+        return
+
+    # Step 2: Tailored extraction
+    prompts = {
+        "bank_statement": '''Extract from this bank statement. Return ONLY valid JSON:
+{"is_bank_document": true, "account_holder_name": "name as printed", "bank_name": "bank name", "account_number_last4": "last 4 digits or null", "business_name_on_account": "business name if present else null", "doc_type": "statement"}''',
+        "passbook": '''Extract from this bank passbook. Return ONLY valid JSON:
+{"is_bank_document": true, "account_holder_name": "name on passbook", "bank_name": "bank name", "account_number_last4": "last 4 digits or null", "business_name_on_account": null, "doc_type": "passbook"}''',
+        "online_banking": '''Extract from this online/mobile banking screenshot. Return ONLY valid JSON:
+{"is_bank_document": true, "account_holder_name": "name shown in app", "bank_name": "bank or app name", "account_number_last4": "last 4 digits or null", "business_name_on_account": null, "doc_type": "online_banking"}''',
+        "e_wallet": '''Extract from this e-wallet screenshot. Return ONLY valid JSON:
+{"is_bank_document": true, "account_holder_name": "registered name", "bank_name": "wallet name (TNG/GoPay/GCash/Maya/Dana)", "account_number_last4": "last 4 of phone/account or null", "business_name_on_account": null, "doc_type": "e_wallet"}''',
+    }
+
+    extract_resp = client.models.generate_content(model=MODEL, contents=[prompts.get(doc_type, prompts["online_banking"]), img])
+    try:
+        bank_data = json.loads(extract_resp.text.strip().replace("```json","").replace("```",""))
+        bank_data["is_bank_document"] = True
+    except:
+        bank_data = {"is_bank_document": False}
+
+    if not bank_data.get("is_bank_document"):
+        if lang == "bm":
+            send_message(phone, "❌ Gagal membaca dokumen. Sila cuba hantar gambar yang lebih jelas.\n\nTaip *LANGKAU* untuk langkau")
+        else:
+            send_message(phone, "❌ Failed to read document. Please try a clearer image.\n\nType *SKIP* to skip")
+        return
+
+    holder_name = (bank_data.get("account_holder_name") or "").strip().lower()
+    biz_on_acc = (bank_data.get("business_name_on_account") or "").strip().lower()
+    bank_name = bank_data.get("bank_name", "N/A")
+    acc_last4 = bank_data.get("account_number_last4") or ""
+
+    # Fuzzy name match
+    stopwords = {"sdn","bhd","enterprise","trading","the","and","&","co","bin","binti","bte","mr","ms","mrs"}
+    name_match = True
+    if owner_name:
+        owner_words = set(owner_name.split()) - stopwords
+        holder_words = set(holder_name.split()) - stopwords
+        biz_words = set(biz_on_acc.split()) - stopwords if biz_on_acc else set()
+        if owner_words and (holder_words or biz_words):
+            overlap = max(
+                len(owner_words & holder_words) / max(len(owner_words), 1),
+                len(owner_words & biz_words) / max(len(owner_words), 1) if biz_words else 0
+            )
+            name_match = overlap >= 0.5
+
+    user_ref.update({
+        "has_bank_account": "yes",
+        "bank_verified": True,
+        "bank_name": bank_name,
+        "bank_holder_name": bank_data.get("account_holder_name", ""),
+        "bank_acc_last4": acc_last4,
+        "bank_name_match": name_match,
+        "bank_verified_date": str(datetime.now().date()),
+    })
+
+    match_icon = "✅" if name_match else "⚠️"
+    match_bm = "Nama *sepadan* dengan profil awak!" if name_match else "Nama *tidak sepadan sepenuhnya* — kemaskini profil jika perlu."
+    match_en = "Name *matches* your profile!" if name_match else "Name *doesn't fully match* — update profile if needed."
+    doc_labels = {"statement": "Penyata Bank", "passbook": "Buku Bank", "online_banking": "Online Banking", "e_wallet": "E-Wallet"}
+    doc_label_bm = doc_labels.get(doc_type, "Dokumen Bank")
+    doc_label_en = {"statement": "Bank Statement", "passbook": "Passbook", "online_banking": "Online Banking", "e_wallet": "E-Wallet"}.get(doc_type, "Bank Document")
+
+    if lang == "bm":
+        send_message(phone,
+            "🎉 *Akaun Bank Disahkan!*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏦 Bank: *{bank_name}*\n"
+            f"👤 Pemegang: *{bank_data.get('account_holder_name', 'N/A')}*\n"
+            + (f"🔢 No. Akaun: ****{acc_last4}\n" if acc_last4 else "") +
+            f"📄 Jenis: {doc_label_bm}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{match_icon} {match_bm}\n\n"
+            "🏅 *+10 mata kredit penuh* untuk akaun bank yang disahkan!\n"
+        )
+    else:
+        send_message(phone,
+            "🎉 *Bank Account Verified!*\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏦 Bank: *{bank_name}*\n"
+            f"👤 Holder: *{bank_data.get('account_holder_name', 'N/A')}*\n"
+            + (f"🔢 Account: ****{acc_last4}\n" if acc_last4 else "") +
+            f"📄 Type: {doc_label_en}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"{match_icon} {match_en}\n\n"
+            "🏅 *+10 full credit points* for verified bank account!\n"
+        )
+
+    # Route based on mode
+    if mode == "await_bank_doc_then_reg":
+        # Came from credit flow — now ask SSM question
+        user_data_fresh = user_ref.get().to_dict()
+        cc = get_country(user_data_fresh)
+        user_ref.update({"state": "credit_q3"})
+        if lang == "bm":
+            send_message(phone, f"\n⏩ Soalan seterusnya...\n\nSoalan 3️⃣: {cc['reg_question_bm']}\n_(Balas: Ya / Tidak)_")
+        else:
+            send_message(phone, f"\n⏩ Next question...\n\nQuestion 3️⃣: {cc['reg_question_en']}\n_(Reply: Yes / No)_")
+    else:
+        # Standalone BANK command — just reset to menu
+        user_ref.update({"state": "menu"})
+        if lang == "bm":
+            send_message(phone, "Taip *SKOR* untuk lihat skor kredit terbaru awak\nTaip *MENU* untuk kembali")
+        else:
+            send_message(phone, "Type *SCORE* to see your updated credit score\nType *MENU* to go back")
+
 
 # ─────────────────────────────────────
 # LOAN READINESS CHECKLIST
