@@ -19,7 +19,7 @@ WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL = "gemini-2.0-flash"
+MODEL = "gemini-2.5-flash"
 
 firebase_creds_str = os.getenv("FIREBASE_CREDENTIALS_BASE64")
 firebase_creds = json_module.loads(base64.b64decode(firebase_creds_str).decode())
