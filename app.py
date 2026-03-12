@@ -311,15 +311,12 @@ def handle_text(phone, text):
                 send_message(phone, "⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nTaip *MENU* untuk kembali")
             else:
                 send_message(phone, "⏭️ Bank verification skipped (7 pts instead of 10).\n\nType *MENU* to go back")
-        elif current_state in ("content_generate", "content_menu", "log_sale", "ai_chat"):
-            pass  # Let these states handle SKIP themselves — do NOT return
         else:
             if lang == "bm":
                 send_message(phone, "Tiada tindakan untuk dilangkau.\n\nTaip *MENU* untuk kembali.")
             else:
                 send_message(phone, "Nothing to skip.\n\nType *MENU* to go back.")
-            return
-        # Only return early if we handled SKIP above; passthrough states continue below
+        return
 
     # KEMASKINI/UPDATE command — re-answer credit questions
     if text_upper in ["KEMASKINI", "UPDATE"]:
@@ -954,18 +951,10 @@ def handle_menu(phone, text, user_ref):
                 "6️⃣ 📈 Ramalan Jualan AI\n"
                 "7️⃣ 📦 Tip Rantaian Bekalan AI\n"
                 "8️⃣ 🌏 Panduan Eksport ASEAN\n\n"
-                "💡 Taip *PROFIL* untuk eksport profil\n"
-                "💡 Taip *SIJIL* untuk sijil kredit\n"
-                "💡 Taip *PECAHAN* untuk pecahan skor\n"
-                "💡 Taip *PINJAMAN* untuk semak kelayakan\n"
-                "💡 Taip *RUJUK* untuk rujukan pinjaman\n"
-                "🔐 Taip *SAHKAN* untuk sahkan sijil SSM\n"
-                "💡 Taip *ENGLISH* untuk tukar bahasa\n"
-                "🔒 Taip *DATA* untuk lihat data yang disimpan\n\n"
-                "📋 PROFIL • 🎓 SIJIL • 📊 PECAHAN\n"
-                "💰 PINJAMAN • ✉️ RUJUK • ✓ SAHKAN\n"
-                "🌐 ENGLISH • 🔒 DATA\n\n"
-                "_Balas 1-8 atau taip arahan_"
+                "*PROFIL* · *SIJIL* · *PECAHAN*\n"
+                "*PINJAMAN* · *RUJUK* · *SAHKAN*\n"
+                "*ENGLISH* · *DATA*\n\n"
+                "_Balas dengan nombor pilihan_"
             )
         else:
             send_message(phone,
@@ -978,18 +967,10 @@ def handle_menu(phone, text, user_ref):
                 "6️⃣ 📈 AI Sales Forecast\n"
                 "7️⃣ 📦 AI Supply Chain Tips\n"
                 "8️⃣ 🌏 ASEAN Export Guide\n\n"
-                "💡 Type *PROFILE* to export profile\n"
-                "💡 Type *CERTIFICATE* for credit certificate\n"
-                "💡 Type *BREAKDOWN* for score breakdown\n"
-                "💡 Type *LOAN* to check eligibility\n"
-                "💡 Type *REFER* for loan referral\n"
-                "🔐 Type *VERIFY* to verify SSM certificate\n"
-                "💡 Type *BM* to switch to Bahasa Malaysia\n"
-                "🔒 Type *DATA* to view your stored data\n\n"
-                "📋 PROFILE • 🎓 CERTIFICATE • 📊 BREAKDOWN\n"
-                "💰 LOAN • ✉️ REFER • ✓ VERIFY\n"
-                "🌐 BM • 🔒 DATA\n\n"
-                "_Reply 1-8 or type command_"
+                "*PROFILE* · *CERTIFICATE* · *BREAKDOWN*\n"
+                "*LOAN* · *REFER* · *VERIFY*\n"
+                "*BM* · *DATA*\n\n"
+                "_Reply with your choice number_"
             )
     elif t_upper == "1":
         user_ref.update({"state": "log_sale"})
