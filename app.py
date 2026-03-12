@@ -311,12 +311,15 @@ def handle_text(phone, text):
                 send_message(phone, "⏭️ Pengesahan bank dilangkau (7 mata, bukan 10).\n\nTaip *MENU* untuk kembali")
             else:
                 send_message(phone, "⏭️ Bank verification skipped (7 pts instead of 10).\n\nType *MENU* to go back")
+        elif current_state in ("content_generate", "content_menu", "log_sale", "ai_chat"):
+            pass  # Let these states handle SKIP themselves — do NOT return
         else:
             if lang == "bm":
                 send_message(phone, "Tiada tindakan untuk dilangkau.\n\nTaip *MENU* untuk kembali.")
             else:
                 send_message(phone, "Nothing to skip.\n\nType *MENU* to go back.")
-        return
+            return
+        # Only return early if we handled SKIP above; passthrough states continue below
 
     # KEMASKINI/UPDATE command — re-answer credit questions
     if text_upper in ["KEMASKINI", "UPDATE"]:
@@ -551,7 +554,7 @@ Return ONLY the extracted keywords, nothing else.
                 )
         else:
             # Route menu numbers directly, smart_handle for natural language
-            if text_upper in ["1","2","3","4","5","6","7","8","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER","KEMASKINI","UPDATE"]:
+            if text_upper in ["1","2","3","4","5","6","7","8","9","MENU","PROFIL","PROFILE","SIJIL","CERTIFICATE","PINJAMAN","LOAN","RESET","DATA","BREAKDOWN","PECAHAN","RUJUK","REFER","KEMASKINI","UPDATE"]:
                 handle_menu(phone, text, user_ref)
             else:
                 smart_handle(phone, text, user_ref)
@@ -768,7 +771,7 @@ def smart_handle(phone, text, user_ref):
     if text_upper == "MENU":
         handle_menu(phone, "MENU", user_ref)
         return
-    if text_upper in ["1","2","3","4","5","6","7","8"]:
+    if text_upper in ["1","2","3","4","5","6","7","8","9"]:
         handle_menu(phone, text, user_ref)
         return
     if text_upper in ["PROFIL","PROFILE"]:
@@ -946,11 +949,12 @@ def handle_menu(phone, text, user_ref):
                 "1️⃣ Rekod Jualan Hari Ini\n"
                 "2️⃣ Jana Skor Kredit Saya\n"
                 "3️⃣ Tanya Soalan Perniagaan (AI)\n"
-                "4️⃣ Ringkasan Jualan Saya\n"
-                "5️⃣ Jana Kandungan Media Sosial\n"
-                "6️⃣ 📈 Ramalan Jualan AI\n"
-                "7️⃣ 📦 Tip Rantaian Bekalan AI\n"
-                "8️⃣ 🌏 Panduan Eksport ASEAN\n\n"
+                "4️⃣ Hantar Gambar Resit/Bayaran\n"
+                "5️⃣ Ringkasan Jualan Saya\n"
+                "6️⃣ Jana Kandungan Media Sosial\n"
+                "7️⃣ 📈 Ramalan Jualan AI\n"
+                "8️⃣ 📦 Tip Rantaian Bekalan AI\n"
+                "9️⃣ 🌏 Panduan Eksport ASEAN\n\n"
                 "💡 Taip *PROFIL* untuk eksport profil\n"
                 "💡 Taip *SIJIL* untuk sijil kredit\n"
                 "💡 Taip *PECAHAN* untuk pecahan skor\n"
@@ -967,11 +971,12 @@ def handle_menu(phone, text, user_ref):
                 "1️⃣ Record Today's Sales\n"
                 "2️⃣ Generate My Credit Score\n"
                 "3️⃣ Ask Business Question (AI)\n"
-                "4️⃣ My Sales Summary\n"
-                "5️⃣ Generate Social Media Content\n"
-                "6️⃣ 📈 AI Sales Forecast\n"
-                "7️⃣ 📦 AI Supply Chain Tips\n"
-                "8️⃣ 🌏 ASEAN Export Guide\n\n"
+                "4️⃣ Send Receipt/Payment Photo\n"
+                "5️⃣ My Sales Summary\n"
+                "6️⃣ Generate Social Media Content\n"
+                "7️⃣ 📈 AI Sales Forecast\n"
+                "8️⃣ 📦 AI Supply Chain Tips\n"
+                "9️⃣ 🌏 ASEAN Export Guide\n\n"
                 "💡 Type *PROFILE* to export profile\n"
                 "💡 Type *CERTIFICATE* for credit certificate\n"
                 "💡 Type *BREAKDOWN* for score breakdown\n"
@@ -985,25 +990,9 @@ def handle_menu(phone, text, user_ref):
     elif t_upper == "1":
         user_ref.update({"state": "log_sale"})
         if lang == "bm":
-            send_message(phone,
-                "💰 *Rekod Jualan*\n\n"
-                "Awak boleh rekod jualan dengan 2 cara:\n\n"
-                "✏️ *Taip* — ceritakan jualan awak\n"
-                f"_(Contoh: {cc['sale_example_bm']})_\n\n"
-                "📸 *Hantar gambar* — screenshot resit atau bukti bayaran\n"
-                "_(Saya akan rekod jualan awak secara automatik!)_\n\n"
-                "Taip *MENU* untuk kembali"
-            )
+            send_message(phone, f"💰 *Rekod Jualan*\n\nCeritakan jualan awak hari ini.\n_(Contoh: {cc['sale_example_bm']})_")
         else:
-            send_message(phone,
-                "💰 *Record Sales*\n\n"
-                "You can record your sales in 2 ways:\n\n"
-                "✏️ *Type it* — describe your sale\n"
-                f"_(Example: {cc['sale_example_en']})_\n\n"
-                "📸 *Send a photo* — receipt or payment screenshot\n"
-                "_(I will automatically record your sale!)_\n\n"
-                "Type *MENU* to go back"
-            )
+            send_message(phone, f"💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: {cc['sale_example_en']})_")
     elif t_upper == "2":
         # Check if user already answered the 3 credit questions before
         check_data = user_ref.get().to_dict()
@@ -1044,8 +1033,13 @@ def handle_menu(phone, text, user_ref):
         else:
             send_message(phone, f"🤖 *AI Business Advisor*\n\nAsk me anything! Examples:\n• How do I set my prices?\n• How do I apply for a {cc['loan_program']} loan?\n• How do I promote online?\n\n_(Type MENU to go back)_")
     elif t_upper == "4":
-        show_sales_summary(phone, user_ref)
+        if lang == "bm":
+            send_message(phone, "📸 *Hantar Gambar Resit*\n\nHantar gambar resit atau screenshot bayaran WhatsApp awak.\nSaya akan rekod jualan awak secara automatik!\n\n_(Taip MENU untuk kembali)_")
+        else:
+            send_message(phone, "📸 *Send Receipt Photo*\n\nSend a photo of your receipt or WhatsApp payment screenshot.\nI will automatically record your sale!\n\n_(Type MENU to go back)_")
     elif t_upper == "5":
+        show_sales_summary(phone, user_ref)
+    elif t_upper == "6":
         user_ref.update({"state": "content_menu"})
         if lang == "bm":
             send_message(phone,
@@ -1069,11 +1063,11 @@ def handle_menu(phone, text, user_ref):
                 "5️⃣ Seasonal Promotion Ideas\n\n"
                 "_(Type MENU to go back)_"
             )
-    elif t_upper == "6":
-        show_sales_forecast(phone, user_ref)
     elif t_upper == "7":
-        show_supply_chain_tips(phone, user_ref)
+        show_sales_forecast(phone, user_ref)
     elif t_upper == "8":
+        show_supply_chain_tips(phone, user_ref)
+    elif t_upper == "9":
         show_export_guide(phone, user_ref)
     else:
         if lang == "bm":
