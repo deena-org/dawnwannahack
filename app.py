@@ -19,7 +19,7 @@ WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL = "gemini-2.0-flash"
+MODEL = "gemini-2.5-flash"
 
 firebase_creds_str = os.getenv("FIREBASE_CREDENTIALS_BASE64")
 firebase_creds = json_module.loads(base64.b64decode(firebase_creds_str).decode())
@@ -44,7 +44,6 @@ def verify():
 @app.route("/webhook", methods=["POST"])
 def receive():
     data = request.get_json()
-    phone = None
     try:
         entry = data["entry"][0]["changes"][0]["value"]
         if "messages" in entry:
@@ -55,14 +54,7 @@ def receive():
             elif msg["type"] == "image":
                 handle_image(phone, msg["image"]["id"])
     except Exception as e:
-        import traceback
-        print(f"[ERROR] Unhandled exception: {e}")
-        print(traceback.format_exc())
-        if phone:
-            try:
-                send_message(phone, "⚠️ Maaf, berlaku ralat teknikal. Sila cuba lagi.\n\nSorry, a technical error occurred. Please try again.")
-            except:
-                pass
+        print(f"Error: {e}")
     return jsonify({"status": "ok"}), 200
 
 # ─────────────────────────────────────
