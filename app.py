@@ -291,13 +291,20 @@ def handle_text(phone, text):
         current_state = user_data.get("state", "menu")
         user_data_now = user_ref.get().to_dict()
         cc = get_country(user_data_now)
-        if current_state in ("await_ssm_cert", "await_ssm_cert_then_score"):
-            # Self-declared SSM = 7 pts
+        if current_state == "await_ssm_cert_then_score":
+            # Skipped during credit flow — 7 pts, auto-generate score
             user_ref.update({"state": "menu"})
             if lang == "bm":
-                send_message(phone, "⏭️ Pengesahan SSM dilangkau (7 mata, bukan 10).\n\nTaip *SKOR* untuk lihat skor kredit\nTaip *MENU* untuk kembali")
+                send_message(phone, "⏭️ Pengesahan SSM dilangkau (7 mata, bukan 10).\n\n⏳ Sedang mengira skor kredit awak...")
             else:
-                send_message(phone, "⏭️ SSM verification skipped (7 pts instead of 10).\n\nType *SCORE* to view credit score\nType *MENU* to go back")
+                send_message(phone, "⏭️ SSM verification skipped (7 pts instead of 10).\n\n⏳ Calculating your credit score...")
+            generate_credit_score(phone, user_ref)
+        elif current_state == "await_ssm_cert":
+            user_ref.update({"state": "menu"})
+            if lang == "bm":
+                send_message(phone, "⏭️ Pengesahan SSM dilangkau.\n\nTaip *MENU* untuk kembali")
+            else:
+                send_message(phone, "⏭️ SSM verification skipped.\n\nType *MENU* to go back")
         elif current_state == "await_bank_doc_then_reg":
             # Self-declared bank = 7 pts, then move to SSM question
             user_ref.update({"state": "credit_q3"})
@@ -991,18 +998,26 @@ def handle_menu(phone, text, user_ref):
         else:
             send_message(phone, f"💰 *Record Sales*\n\nTell me about your sales today.\n_(Example: {cc['sale_example_en']})_")
     elif t_upper == "2":
-        # Check if user already answered the 3 credit questions before
         check_data = user_ref.get().to_dict()
         has_answers = check_data.get("biz_age") and check_data.get("has_bank_account") and check_data.get("has_ssm")
         if has_answers:
-            # Show current info and ask if anything changed
+            bank_val = check_data.get("has_bank_account", "tidak")
+            ssm_val = check_data.get("has_ssm", "tidak")
+            bank_verified = check_data.get("bank_verified", False)
+            ssm_verified_flag = check_data.get("ssm_verified", False)
+            def fmt_bm(val, v):
+                if val.lower().startswith(("y","a")): return "ya ✅ (disahkan)" if v else "ya ⚠️ (belum disahkan)"
+                return "tidak"
+            def fmt_en(val, v):
+                if val.lower().startswith(("y","a")): return "yes ✅ (verified)" if v else "yes ⚠️ (unverified)"
+                return "no"
             user_ref.update({"state": "credit_confirm"})
             if lang == "bm":
                 send_message(phone,
                     "📊 *Jana Skor Kredit*\n\n"
                     "Maklumat semasa awak:\n\n"
-                    f"🏦 Akaun bank: *{check_data.get('has_bank_account')}*\n"
-                    f"📝 {cc['registration']}: *{check_data.get('has_ssm')}*\n\n"
+                    f"🏦 Akaun bank: *{fmt_bm(bank_val, bank_verified)}*\n"
+                    f"📝 {cc['registration']}: *{fmt_bm(ssm_val, ssm_verified_flag)}*\n\n"
                     "Adakah maklumat ini masih *sama*?\n\n"
                     "Taip *YA* → Jana skor terus\n"
                     "Taip *TIDAK* → Kemaskini maklumat"
@@ -1011,8 +1026,8 @@ def handle_menu(phone, text, user_ref):
                 send_message(phone,
                     "📊 *Generate Credit Score*\n\n"
                     "Your current info:\n\n"
-                    f"🏦 Bank account: *{check_data.get('has_bank_account')}*\n"
-                    f"📝 {cc['registration']}: *{check_data.get('has_ssm')}*\n\n"
+                    f"🏦 Bank account: *{fmt_en(bank_val, bank_verified)}*\n"
+                    f"📝 {cc['registration']}: *{fmt_en(ssm_val, ssm_verified_flag)}*\n\n"
                     "Is this info still *correct*?\n\n"
                     "Type *YES* → Generate score now\n"
                     "Type *NO* → Update info"
@@ -1020,9 +1035,9 @@ def handle_menu(phone, text, user_ref):
         else:
             user_ref.update({"state": "credit_q1"})
             if lang == "bm":
-                send_message(phone, "📊 *Jana Skor Kredit*\n\nSaya perlu tanya 3 soalan tambahan untuk skor yang lebih tepat.\n\nSoalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n_(Contoh: 3 bulan, 1 tahun, 5 tahun)_")
+                send_message(phone, "📊 *Jana Skor Kredit*\n\nSaya perlu tanya 3 soalan untuk skor yang tepat.\n\nSoalan 1️⃣: Berapa lama perniagaan awak dah beroperasi?\n_(Contoh: 3 bulan, 1 tahun, 5 tahun)_")
             else:
-                send_message(phone, "📊 *Generate Credit Score*\n\nI need to ask 3 additional questions for a more accurate score.\n\nQuestion 1️⃣: How long has your business been operating?\n_(Example: 3 months, 1 year, 5 years)_")
+                send_message(phone, "📊 *Generate Credit Score*\n\nI need to ask 3 questions for an accurate score.\n\nQuestion 1️⃣: How long has your business been operating?\n_(Example: 3 months, 1 year, 5 years)_")
     elif t_upper == "3":
         user_ref.update({"state": "ai_chat"})
         if lang == "bm":
@@ -1775,7 +1790,7 @@ def handle_image(phone, image_id):
 
     # ── Route based on current state ──
     if state in ("await_ssm_cert", "await_ssm_cert_then_score"):
-        handle_ssm_verification(phone, user_ref, user_data, img)
+        handle_ssm_verification(phone, user_ref, user_data, img, after_score=(state == "await_ssm_cert_then_score"))
         return
 
     if state in ("await_bank_doc_then_reg", "await_bank_doc_then_score", "await_bank_doc"):
@@ -1959,8 +1974,7 @@ If this is NOT a {reg_type} registration certificate, set "is_registration_cert"
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"{match_icon} {match_note_bm}\n\n"
             "🏅 *+10 mata kredit* untuk pengesahan sijil!\n\n"
-            "Taip *SKOR* untuk lihat skor kredit terbaru awak\n"
-            "Taip *MENU* untuk kembali ke menu"
+            + ("⏳ Sedang mengira skor kredit awak..." if after_score else "Taip *SKOR* untuk lihat skor kredit terbaru awak\nTaip *MENU* untuk kembali")
         )
     else:
         send_message(phone,
@@ -1976,11 +1990,16 @@ If this is NOT a {reg_type} registration certificate, set "is_registration_cert"
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"{match_icon} {match_note_en}\n\n"
             "🏅 *+10 credit points* for certificate verification!\n\n"
-            "Type *SCORE* to see your updated credit score\n"
-            "Type *MENU* to go back"
+            + ("⏳ Calculating your credit score..." if after_score else "Type *SCORE* to see your updated credit score\nType *MENU* to go back")
         )
-    # Reset state to menu — user decides when to view score
+    # Reset state; auto-generate score if came from credit flow
     user_ref.update({"state": "menu"})
+    if after_score:
+        if lang == "bm":
+            send_message(phone, "⏳ Sedang mengira skor kredit awak...")
+        else:
+            send_message(phone, "⏳ Calculating your credit score...")
+        generate_credit_score(phone, user_ref)
 
 # ─────────────────────────────────────
 # BANK ACCOUNT VERIFICATION
