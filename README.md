@@ -20,6 +20,26 @@ This project was developed for the **AI for Inclusive MSME Growth** case study.
 
 ---
 
+Table of Contents
+
+Team
+Demo Video
+GitHub Repository
+How BizBuddy Solves the Case Study
+Key Features
+Web Dashboard
+System Architecture
+Tech Stack
+Hosted WhatsApp Bot
+Testing the WhatsApp Bot
+WhatsApp API Restriction
+Running the Project Locally
+AI Disclosure
+Future Improvements
+License
+
+---
+
 # Team
 
 Adam  
