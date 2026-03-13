@@ -20,9 +20,29 @@ This project was developed for the **AI for Inclusive MSME Growth** case study.
 
 ---
 
+# Table of Contents
+
+- [Team](#team)
+- [Demo Video](#demo-video)
+- [GitHub Repository](#github-repository)
+- [How BizBuddy Solves the Case Study](#how-bizbuddy-solves-the-case-study)
+- [Key Features](#key-features)
+- [Web Dashboard](#web-dashboard)
+- [System Architecture](#system-architecture)
+- [Tech Stack](#tech-stack)
+- [Hosted WhatsApp Bot](#hosted-whatsapp-bot)
+- [Testing the WhatsApp Bot](#testing-the-whatsapp-bot)
+- [WhatsApp API Restriction](#whatsapp-api-restriction)
+- [Running the Project Locally](#running-the-project-locally)
+- [AI Disclosure](#ai-disclosure)
+- [Future Improvements](#future-improvements)
+- [License](#license)
+
+---
+
 # Team
 
-Adam
+Adam  
 Ajwad  
 Sakinah  
 Deena  
