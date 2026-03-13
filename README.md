@@ -22,7 +22,7 @@ This project was developed for the **AI for Inclusive MSME Growth** case study.
 
 # Team
 
-Adam Haikal  
+Adam
 Ajwad  
 Sakinah  
 Deena  
