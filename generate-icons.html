@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>BizBuddy Icon Generator</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0d1117; color: #e8edf8; padding: 40px; text-align: center; }
+  h1 { color: #00d4aa; margin-bottom: 8px; }
+  p { color: #5a6785; margin-bottom: 32px; }
+  .icons { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .icon-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  canvas { border-radius: 24px; box-shadow: 0 8px 32px rgba(0,212,170,0.2); }
+  button { background: linear-gradient(135deg, #00d4aa, #6c63ff); border: none; border-radius: 10px; padding: 10px 24px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 4px; }
+  button:hover { opacity: 0.9; }
+  .instructions { background: #161b27; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; max-width: 500px; margin: 0 auto; text-align: left; font-size: 14px; color: #5a6785; line-height: 1.8; }
+  .instructions strong { color: #00d4aa; }
+</style>
+</head>
+<body>
+<h1>BizBuddy Icon Generator</h1>
+<p>One-time tool — download both icons, save to <code>icons/</code> folder.</p>
+
+<div class="icons">
+  <div class="icon-wrap">
+    <canvas id="c192" width="192" height="192"></canvas>
+    <span>192×192</span>
+    <button onclick="download('c192', 'icon-192.png')">Download icon-192.png</button>
+  </div>
+  <div class="icon-wrap">
+    <canvas id="c512" width="512" height="512"></canvas>
+    <span>512×512</span>
+    <button onclick="download('c512', 'icon-512.png')">Download icon-512.png</button>
+  </div>
+</div>
+
+<div class="instructions">
+  <strong>After downloading:</strong><br>
+  1. Save both files to <code>dawnwannahack/icons/</code><br>
+  2. manifest.json already references them<br>
+  3. Reload app — icons will appear on install prompt
+</div>
+
+<script>
+function drawIcon(canvas) {
+  const S = canvas.width;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient circle
+  const grad = ctx.createLinearGradient(0, 0, S, S);
+  grad.addColorStop(0, '#00d4aa');
+  grad.addColorStop(1, '#6c63ff');
+  ctx.beginPath();
+  ctx.arc(S/2, S/2, S/2, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Subtle inner ring
+  ctx.beginPath();
+  ctx.arc(S/2, S/2, S * 0.39, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = S * 0.004;
+  ctx.stroke();
+
+  // "BB" text
+  const textGrad = ctx.createLinearGradient(0, 0, S, S);
+  textGrad.addColorStop(0, '#ffffff');
+  textGrad.addColorStop(1, '#e0f9f4');
+  ctx.fillStyle = textGrad;
+  ctx.font = `900 ${S * 0.38}px "Arial Black", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.letterSpacing = `-${S * 0.016}px`;
+  ctx.fillText('BB', S / 2, S * 0.50);
+
+  // Accent dot
+  ctx.beginPath();
+  ctx.arc(S/2, S * 0.745, S * 0.031, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fill();
+}
+
+function download(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+drawIcon(document.getElementById('c192'));
+drawIcon(document.getElementById('c512'));
+</script>
+</body>
+</html>

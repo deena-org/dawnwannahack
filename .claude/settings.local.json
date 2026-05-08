@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($lines = Get-Content \"C:\\\\Users\\\\adamm\\\\Desktop\\\\dawnwannahack\\\\dawnwannahack\\\\index.html\"; $styleEnd = \\($lines | Select-String \"</style>\" | Select-Object -First 1\\).LineNumber; $scriptStart = \\($lines | Select-String \"<script>\" | Select-Object -First 1\\).LineNumber; $scriptEnd = \\($lines | Select-String \"</script>\" | Select-Object -Last 1\\).LineNumber; Write-Output \"Total: $\\($lines.Count\\) lines\"; Write-Output \"CSS ends ~line: $styleEnd\"; Write-Output \"JS starts ~line: $scriptStart\"; Write-Output \"JS ends ~line: $scriptEnd\"; Write-Output \"CSS lines: $\\($styleEnd\\)\"; Write-Output \"HTML lines: $\\($scriptStart - $styleEnd\\)\"; Write-Output \"JS lines: $\\($scriptEnd - $scriptStart\\)\")",
+      "PowerShell($lines = Get-Content \"C:\\\\Users\\\\adamm\\\\Desktop\\\\dawnwannahack\\\\dawnwannahack\\\\index.html\"; $scripts = $lines | Select-String \"<script\" ; $scripts | ForEach-Object { \"Line $\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "PowerShell($lines = Get-Content \"C:\\\\Users\\\\adamm\\\\Desktop\\\\dawnwannahack\\\\dawnwannahack\\\\index.html\"; $scriptTags = $lines | Select-String \"</script>\"; $scriptTags | ForEach-Object { \"Line $\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })"
+    ]
+  }
+}
