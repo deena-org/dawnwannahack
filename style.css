@@ -357,3 +357,46 @@ body.light-mode .cert-card{background:linear-gradient(135deg,#e8f8f5,#ede9ff);}
 .lang-toggle{display:flex;background:var(--surface2);border-radius:8px;padding:2px;border:1px solid var(--border);overflow:hidden;}
 .lang-btn{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;}
 .lang-btn.active{background:var(--accent);color:#000;font-weight:600;}
+
+.loan-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.loan-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.loan-info h4 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.loan-info p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.loan-amount {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.apply-tag {
+    font-size: 10px;
+    background: rgba(0, 212, 170, 0.1);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}

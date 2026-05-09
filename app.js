@@ -424,6 +424,47 @@ function buildSalesChart(sales, period) {
   });
 }
 
+const LOAN_PRODUCTS = [
+    { id: 1, bank: "Maybank", name: "SME Clean Loan", minScore: 75, maxAmount: "RM 50,000", rate: "4.5%" },
+    { id: 2, bank: "CIMB", name: "Micro-Biz Financing", minScore: 60, maxAmount: "RM 20,000", rate: "5.2%" },
+    { id: 3, bank: "BSN", name: "Tema Niaga", minScore: 50, maxAmount: "RM 10,000", rate: "3.8%" },
+    { id: 4, bank: "Tekun", name: "Mobilepreneur", minScore: 30, maxAmount: "RM 5,000", rate: "4.0%" }
+];
+
+function updateLoanRecommendations(userScore) {
+    const loanContainer = document.getElementById('loan-list');
+    const matchCountEl = document.getElementById('loan-match-count');
+    
+    // Filter loans where user score >= minimum required
+    const matches = LOAN_PRODUCTS.filter(loan => userScore >= loan.minScore);
+    
+    matchCountEl.innerText = `${matches.length} Matches`;
+    
+    if (matches.length === 0) {
+        loanContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px;">
+            Keep growing your score to unlock loan offers.</div>`;
+        return;
+    }
+
+    loanContainer.innerHTML = matches.map(loan => `
+        <div class="loan-item">
+            <div class="loan-info">
+                <span class="apply-tag">Match Found</span>
+                <h4>${loan.bank} - ${loan.name}</h4>
+                <p>Interest: ${loan.rate} p.a.</p>
+            </div>
+            <div style="text-align: right;">
+                <div class="loan-amount">Up to ${loan.maxAmount}</div>
+                <button class="btn-primary" style="padding: 5px 12px; font-size: 11px; margin-top: 8px;" 
+                        onclick="openPrequalModal()">Apply Now</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Call this inside your existing data loading function
+// Example: updateLoanRecommendations(userData.score);
+
 function buildRoadmap(user, sales) {
   const items = [
     { done: !!(user.owner_name), label: t('profile_created'), desc: t('profile_desc') },
